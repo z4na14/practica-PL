@@ -11,7 +11,7 @@ int yyerror(char *s);
 %%
 /* Seccion 3: Sintáctico - Semántico */
 
-lista: | axioma lista;
+lista: axioma | axioma lista;
 axioma:
       expresion '\n' { printf("Expresion=%lf\n", $1); }
     | '\n'  { }
