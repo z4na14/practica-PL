@@ -34,8 +34,8 @@ operando:    numero                  { $$ = $1 ; }
            | '+' numero              { $$ = $2 ; }
            ;
 
-numero:      digito 		    { $$ = $1 ; pot = 1 ; }
-           | digito numero	   	    { pot *= 10 ; $$ = $1 * pot + $2 ; }      
+numero:      digito 		             { $$ = $1 ; pot = 1 ; }
+           | digito numero	   	     { pot *= 10 ; $$ = $1 * pot + $2 ; }
            ;
 
 digito:      '0'                     { $$ = 0 ; }
