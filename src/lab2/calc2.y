@@ -12,7 +12,7 @@ double pot ;
 %}
                     		/* Seccion 2  Declaraciones de bison   */  
 %%
-					/* Seccion 3  Gramática - Semántico   */
+					/* Seccion 3  Gramï¿½tica - Semï¿½ntico   */
 
 axioma:      expresion '\n' { printf ("Expresion=%lf\n", $1) ; }  r_expr 
            ;
@@ -26,12 +26,12 @@ expresion:   operando                { $$ = $1 ; }
            | operando '-' expresion  { $$ = $1 - $3 ; }
            | operando '*' expresion  { $$ = $1 * $3 ; }
            | operando '/' expresion  { $$ = $1 / $3 ; }
-           | '('  expresion  ')'     { $$ = $2 ; }
            ;
 
 operando:    numero                  { $$ = $1 ; }
            | '-' numero              { $$ = -$2 ; }
            | '+' numero              { $$ = $2 ; }
+           | '('  expresion  ')'     { $$ = $2 ; }
            ;
 
 numero:      digito 		             { $$ = $1 ; pot = 1 ; }
@@ -50,7 +50,7 @@ digito:      '0'                     { $$ = 0 ; }
            | '9'                     { $$ = 9 ; }
            ;
 %%
-					/* Seccion 4  Código en C   */
+					/* Seccion 4  Cï¿½digo en C   */
 int yyerror (char *mensaje)
 {
     fprintf (stderr, "%s\n", mensaje) ;
