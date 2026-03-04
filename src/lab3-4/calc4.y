@@ -1,3 +1,6 @@
+// Denis Loren Moldovan,100522240
+// Jorge Adrian Saghin Dudulea,100522257
+
 %{                                /* Seccion 1 Declaraciones de C-bison */
 #include <stdio.h>
 #define YYSTYPE double            /* tipo de la pila del parser           */
@@ -17,11 +20,11 @@ r_expr:                    /* lambda */
             | axioma
             ;
 
-expresion:    operando                { $$  = $1; }
-            | operando '+' expresion  { $$  = $1 + $3; }
-            | operando '-' expresion  { $$  = $1 - $3; }
-            | operando '*' expresion  { $$  = $1 * $3; }
-            | operando '/' expresion  { $$  = $1 / $3; }
+expresion:    operando                 { $$  = $1; }
+            | expresion '+' expresion  { $$  = $1 + $3; }
+            | expresion '-' expresion  { $$  = $1 - $3; }
+            | expresion '*' expresion  { $$  = $1 * $3; }
+            | expresion '/' expresion  { $$  = $1 / $3; }
             ;
 
 operando:     NUMERO                                    { $$ = $1; }
