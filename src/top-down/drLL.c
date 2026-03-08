@@ -128,9 +128,110 @@ void MatchSymbol (int expected_token)
 // #define ParseRParen() 	MatchSymbol (')') ; ///   rather than using functions
 											/// The actual recomendation is to use MatchSymbol in the code rather than theese macros
 
+#define BUFFSIZE 512
+
+void ParseExpresion(char *buffer);
+
+void ParseTernario(char * buffer) {         // T ::= ?EEE
+    // Ternario ::= ? Expresion Expresion Expresion
+    // Convert (? exp1 exp2 exp3) to (exp1 ? exp2 : exp3)
+    char exp1[BUFFSIZE];
+    char exp2[BUFFSIZE];
+    char exp3[BUFFSIZE];
+
+    MatchSymbol('?');
+    ParseExpresion(exp1);
+    ParseExpresion(exp2);
+    ParseExpresion(exp3);
+
+    snprintf(buffer, BUFFSIZE, "%s ? %s : %s", exp1, exp2, exp3);
+}
+
+void ParseContAsignacion(char *buffer, char *variable, char *expr1) {         // C ::= EE | lambda
+    char expr2[BUFFSIZE];
+    char expr3[BUFFSIZE];
+
+    if (tokens.token == '(' || tokens.token == T_NUMBER || tokens.token == T_VARIABLE) {
+        // ContAsignacion ::= Expresion Expresion
+        // Convert (= variable expr1 expr2 expr3) to (variable = (e1 ? e2 : e3))
+
+        ParseExpresion(expr2);
+        ParseExpresion(expr3);
+
+        snprintf(buffer, BUFFSIZE, "%s = (%s ? %s : %s)", variable, expr1, expr2, expr3);
+    } else {
+        // ContAsignacion ::= lambda
+        // Convert (= variable expr1) to (variable = expr1)
+        snprintf(buffer, BUFFSIZE, "%s = %s", variable, expr1);
+    }
+}
+
+void ParseAsignacion(char *buffer) {         // X ::= =VEC
+    // Asignacion ::= = Variable Expresion ContAsignacion
+    char var[8];
+    char expr1[BUFFSIZE];
+
+    MatchSymbol('=');
+    if (tokens.token != T_VARIABLE) {
+        rd_syntax_error(T_VARIABLE, tokens.token, "Token %d (Variable expected). Got %d instead.");
+    }
+    strcpy(var, tokens.variable_name);
+    rd_lex();
+
+    ParseExpresion(expr1);
+    ParseContAsignacion(buffer, var, expr1);
+}
+
+void ParseOperadorExpresion(char *buffer) {            // O ::= WEE | X | T
+    char left_expr[BUFFSIZE];
+    char right_expr[BUFFSIZE];
+
+    if (tokens.token == T_OPERATOR) {
+        // OperadorExpresion ::= Op Expresion Expresion
+        // Convert (op expr1 expr2) to (expr1 op expr2)
+        char op = (char) tokens.token_val;
+
+        rd_lex();
+
+        ParseExpresion(left_expr);
+        ParseExpresion(right_expr);
+
+        snprintf(buffer, BUFFSIZE, "%s %c %s", left_expr, op, right_expr);
+    } else if (tokens.token == '=') {
+        // OperadorExpresion ::= Asignacion
+        ParseAsignacion(buffer);
+    } else if (tokens.token == '?') {
+        // OperadorExpresion ::= Ternario
+        ParseTernario(buffer);
+    } else {
+        rd_syntax_error(T_OPERATOR, tokens.token, "Token %d (Operator, '=' or '?') expected. Got %d instead.");
+    }
+
+}
+
+void ParseExpresion(char *buffer) {            // E ::= (O) | N | V
+    char opexp[BUFFSIZE];
+    if (tokens.token == '(') {          // E ::= (O)
+        MatchSymbol('(');
+        ParseOperadorExpresion(opexp);
+        MatchSymbol(')');
+        snprintf(buffer, BUFFSIZE, "(%s)", opexp);
+    } else if (tokens.token == T_NUMBER) {          // E ::= N
+        snprintf(buffer, BUFFSIZE, "%d", tokens.number);
+        rd_lex();
+    } else if (tokens.token == T_VARIABLE) {        // E ::= V
+        snprintf(buffer, BUFFSIZE, "%s", tokens.variable_name);
+        rd_lex();
+    } else {
+        rd_syntax_error(0, tokens.token, "Token %d ('(', Number or Variable) expected. Got %d instead.");
+    }
+}
 
 void ParseYourGrammar ()
 {
+    char result[BUFFSIZE];
+    ParseExpresion(result);
+    printf("%s", result);
 }
 
 
