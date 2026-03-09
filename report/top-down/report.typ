@@ -38,18 +38,18 @@
 
 == Funciones de lexer
 
-El lexer va leyendo caracteres, hasta la terminación del programa mediante 
-señales (`Ctrl+C`), o hasta EOF (Input mediante ficheros usando el operador
-de entrada `<`) facilitando las pruebas automatizadas. Este se va saltando
-las tabulaciones, espacios en blanco, y saltos de línea (Cuando este último
+El lexer va leyendo caracteres hasta la terminación del programa mediante
+señales (`Ctrl+C`), o hasta EOF (entrada mediante ficheros usando el operador
+`<`) facilitando las pruebas automatizadas. Este se va saltando
+las tabulaciones, espacios en blanco y saltos de línea (cuando este último
 ocurre, aumenta el contador de líneas).
 
-Cuand se lee cualquier elemento, se actualiza el token anterior ($\LL(k) \/ k=1$).
+Cuando se lee cualquier elemento, se actualiza el token anterior ($\LL(k) \/ k=1$).
 
-- Mientras sea un ńumero, simplemente devuelve el token de dígito.
-- Cuando sea un caracter, este lee el siguiente, lo almacena junto con el token como información sumplimentaria, y devuelve el token de variable.
+- Mientras sea un número, simplemente devuelve el token de dígito.
+- Cuando sea un carácter, este lee el siguiente, lo almacena junto con el token como información suplementaria, y devuelve el token de variable.
 - Si es un operador, ocurre igual que con los dígitos, y lo devuelve directamente.
-- Finalmente, si no ramificamos de ninguna manera, el token se devuelve como literal.
+- Finalmente, si no se ramifica de ninguna manera, el token se devuelve como literal.
 
 == Gramática
 
@@ -67,29 +67,48 @@ Variable           ::= a | b
 
 === Gramática inicial
 
-A diferencia de la primera gramática implementada durante la primera clase, hemos añadido las reglas de las asignaciones tanto normales como ternarias. Por otro lado, en el inicial, implementamos las variables sacandolas directamente del buffer, sin tomar en cuenta de que estos vienen dados por el lexer en forma de token.
+A diferencia de la gramática implementada durante la primera clase, hemos
+añadido las reglas de las asignaciones tanto simples como ternarias. Por otro
+lado, en la inicial implementamos las variables leyéndolas directamente del
+buffer, sin tener en cuenta que estos vienen dados por el lexer en forma de
+token.
 
 ```
 Axioma             ::= Expresion
-Expresion          ::= (Operador Expresion) | Numero | Variable
-Operador Expresion ::= + Expresion Expresion
+Expresion          ::= (OperadorExpresion) | Numero | Variable
+OperadorExpresion  ::= + Expresion Expresion
 Numero             ::= 0 | 1
 Variable           ::= a Contvariable
 Contvariable       ::= a | 0 | #
 ```
 
-=== Equivalente de jflap
+=== Equivalente de JFLAP
+
+Para simplificar la gramática, hemos realizado las siguientes sustituciones:
+```
+Axioma            -> A
+Expresion         -> E
+OperadorExpresion -> O
+Numero            -> N
+Variable          -> V
+Op                -> W
+Asignacion        -> X
+Ternario          -> T
+ContAsignacion    -> C
+```
+
+La gramática final, aplicados los cambios, es:
 
 ```
-A -> E
-E -> (O)
-E -> N
-E -> V
-O -> +EE
-N -> 0
-N -> 1
-V -> a
-V -> b
+A ::= E
+E ::= (O) | N | V
+O ::= W E E | X | T
+W ::= + | - | * | /
+X ::= = V E C
+C ::= EE | λ
+T ::= ? E E E
+N ::= 0 | 1
+V ::= a | b
 ```
 
 === Condiciones LL(1)
@@ -99,6 +118,8 @@ alternativas, los conjuntos FIRST de cada alternativa son disjuntos, lo que
 permite seleccionar la producción correcta con un único token de lookahead.
 
 #image("img/jflap.jpeg")
+
+#image("img/Tabla_JFLAP.jpeg")
 
 === Distinción entre niveles léxico y sintáctico
 
@@ -129,7 +150,6 @@ de línea, que el lexer ya ha descartado.
 )
 
 == Conjunto de pruebas
-
 
 Las pruebas se organizan en categorías progresivas, desde tokens simples
 hasta expresiones complejas con anidamiento profundo y combinaciones de
@@ -239,32 +259,32 @@ y los paréntesis se preservan correctamente en la salida infija.
 === Asignación simple
 
 La regla $"ContAsignacion" arrow lambda$ produce una asignación directa
-`variable = expresion`.
+`(variable = expresion)`.
 
 #table(
   columns: (1fr, 1fr),
   [*Entrada*], [*Salida*],
-  [`(= a 1)`],              [`a = 1`],
-  [`(= b 2)`],              [`b = 2`],
-  [`(= z 0)`],              [`z = 0`],
-  [`(= A 1)`],              [`A = 1`],
-  [`(= B 42)`],             [`B = 42`],
-  [`(= a b)`],              [`a = b`],
-  [`(= A B)`],              [`A = B`],
-  [`(= a (+ 1 2))`],        [`a = (1 + 2)`],
-  [`(= b (* 3 4))`],        [`b = (3 * 4)`],
-  [`(= A (- 5 3))`],        [`A = (5 - 3)`],
-  [`(= B (/ 8 2))`],        [`B = (8 / 2)`],
-  [`(= A (+ A 1))`],        [`A = (A + 1)`],
-  [`(= B (* B 2))`],        [`B = (B * 2)`],
-  [`(= a (+ a b))`],        [`a = (a + b)`],
-  [`(= b (* a b))`],        [`b = (a * b)`],
-  [`(= A (* 1234 B))`],     [`A = (1234 * B)`],
-  [`(= AB (* 2 B))`],       [`AB = (2 * B)`],
-  [`(= a1 (+ a 1))`],       [`a1 = (a + 1)`],
-  [`(= b2 (* b 2))`],       [`b2 = (b * 2)`],
-  [`(= a (+ (* 2 3) (* 4 5)))`],   [`a = ((2 * 3) + (4 * 5))`],
-  [`(= b (- (* A B) (+ C 1)))`],   [`b = ((A * B) - (C + 1))`],
+  [`(= a 1)`],              [`(a = 1)`],
+  [`(= b 2)`],              [`(b = 2)`],
+  [`(= z 0)`],              [`(z = 0)`],
+  [`(= A 1)`],              [`(A = 1)`],
+  [`(= B 42)`],             [`(B = 42)`],
+  [`(= a b)`],              [`(a = b)`],
+  [`(= A B)`],              [`(A = B)`],
+  [`(= a (+ 1 2))`],        [`(a = (1 + 2))`],
+  [`(= b (* 3 4))`],        [`(b = (3 * 4))`],
+  [`(= A (- 5 3))`],        [`(A = (5 - 3))`],
+  [`(= B (/ 8 2))`],        [`(B = (8 / 2))`],
+  [`(= A (+ A 1))`],        [`(A = (A + 1))`],
+  [`(= B (* B 2))`],        [`(B = (B * 2))`],
+  [`(= a (+ a b))`],        [`(a = (a + b))`],
+  [`(= b (* a b))`],        [`(b = (a * b))`],
+  [`(= A (* 1234 B))`],     [`(A = (1234 * B))`],
+  [`(= AB (* 2 B))`],       [`(AB = (2 * B))`],
+  [`(= a1 (+ a 1))`],       [`(a1 = (a + 1))`],
+  [`(= b2 (* b 2))`],       [`(b2 = (b * 2))`],
+  [`(= a (+ (* 2 3) (* 4 5)))`],   [`(a = ((2 * 3) + (4 * 5)))`],
+  [`(= b (- (* A B) (+ C 1)))`],   [`(b = ((A * B) - (C + 1)))`],
 )
 
 === Asignación encadenada
@@ -276,69 +296,69 @@ y luego asigna ese mismo valor a `a`.
 #table(
   columns: (1fr, 1fr),
   [*Entrada*], [*Salida*],
-  [`(= a (= b 1))`],                       [`a = b = 1`],
-  [`(= a (= b 2))`],                       [`a = b = 2`],
-  [`(= A (= B 42))`],                      [`A = B = 42`],
-  [`(= a (= b (= c 1)))`],                 [`a = b = c = 1`],
-  [`(= a (= b (= c (= d 1))))`],           [`a = b = c = d = 1`],
-  [`(= a (= b (= c3 (+ 2 3))))`],          [`a = b = c3 = (2 + 3)`],
-  [`(= az (= b (= c3 (+ 2 3))))`],         [`az = b = c3 = (2 + 3)`],
-  [`(= A (= B (= C (+ 1 2))))`],           [`A = B = C = (1 + 2)`],
-  [`(= a (+ (= b 2) (= c 3)))`],           [`a = (b = 2) + (c = 3)`],
-  [`(= a (* (= b 2) (= c 3)))`],           [`a = (b = 2) * (c = 3)`],
-  [`(= A (+ (= B 1) (= C 2)))`],           [`A = (B = 1) + (C = 2)`],
+  [`(= a (= b 1))`],                       [`(a = (b = 1))`],
+  [`(= a (= b 2))`],                       [`(a = (b = 2))`],
+  [`(= A (= B 42))`],                      [`(A = (B = 42))`],
+  [`(= a (= b (= c 1)))`],                 [`(a = (b = (c = 1)))`],
+  [`(= a (= b (= c (= d 1))))`],           [`(a = (b = (c = (d = 1))))`],
+  [`(= a (= b (= c3 (+ 2 3))))`],          [`(a = (b = (c3 = (2 + 3))))`],
+  [`(= az (= b (= c3 (+ 2 3))))`],         [`(az = (b = (c3 = (2 + 3))))`],
+  [`(= A (= B (= C (+ 1 2))))`],           [`(A = (B = (C = (1 + 2))))`],
+  [`(= a (+ (= b 2) (= c 3)))`],           [`(a = ((b = 2) + (c = 3)))`],
+  [`(= a (* (= b 2) (= c 3)))`],           [`(a = ((b = 2) * (c = 3)))`],
+  [`(= A (+ (= B 1) (= C 2)))`],           [`(A = ((B = 1) + (C = 2)))`],
 )
 
 === Ternario
 
-La forma `(? cond then else)` se traduce a `cond ? then : else`.
+La forma `(? cond then else)` se traduce a `(cond ? then : else)`.
 Se cubren condiciones literales, compuestas y con asignaciones embebidas.
 
 #table(
   columns: (1fr, 1fr),
   [*Entrada*], [*Salida*],
-  [`(? a b c)`],                        [`a ? b : c`],
-  [`(? 1 2 3)`],                        [`1 ? 2 : 3`],
-  [`(? A B C)`],                        [`A ? B : C`],
-  [`(? a 1 2)`],                        [`a ? 1 : 2`],
-  [`(? 0 a b)`],                        [`0 ? a : b`],
-  [`(? A 1 B)`],                        [`A ? 1 : B`],
-  [`(? (+ a 1) b c)`],                  [`(a + 1) ? b : c`],
-  [`(? (- a 1) b c)`],                  [`(a - 1) ? b : c`],
-  [`(? (* a 2) b c)`],                  [`(a * 2) ? b : c`],
-  [`(? a (+ b 1) c)`],                  [`a ? (b + 1) : c`],
-  [`(? a (- b 1) c)`],                  [`a ? (b - 1) : c`],
-  [`(? a b (+ c 1))`],                  [`a ? b : (c + 1)`],
-  [`(? a (+ b 1) (- c 1))`],            [`a ? (b + 1) : (c - 1)`],
-  [`(? (+ a 1) (+ b 1) (+ c 1))`],      [`(a + 1) ? (b + 1) : (c + 1)`],
-  [`(? (* A B) (+ C 1) (- D 1))`],      [`(A * B) ? (C + 1) : (D - 1)`],
-  [`(? (= a 1) b c)`],                  [`a = 1 ? b : c`],
-  [`(? a (= b 1) c)`],                  [`a ? b = 1 : c`],
-  [`(? a b (= c 1))`],                  [`a ? b : c = 1`],
+  [`(? a b c)`],                        [`(a ? b : c)`],
+  [`(? 1 2 3)`],                        [`(1 ? 2 : 3)`],
+  [`(? A B C)`],                        [`(A ? B : C)`],
+  [`(? a 1 2)`],                        [`(a ? 1 : 2)`],
+  [`(? 0 a b)`],                        [`(0 ? a : b)`],
+  [`(? A 1 B)`],                        [`(A ? 1 : B)`],
+  [`(? (+ a 1) b c)`],                  [`((a + 1) ? b : c)`],
+  [`(? (- a 1) b c)`],                  [`((a - 1) ? b : c)`],
+  [`(? (* a 2) b c)`],                  [`((a * 2) ? b : c)`],
+  [`(? a (+ b 1) c)`],                  [`(a ? (b + 1) : c)`],
+  [`(? a (- b 1) c)`],                  [`(a ? (b - 1) : c)`],
+  [`(? a b (+ c 1))`],                  [`(a ? b : (c + 1))`],
+  [`(? a (+ b 1) (- c 1))`],            [`(a ? (b + 1) : (c - 1))`],
+  [`(? (+ a 1) (+ b 1) (+ c 1))`],      [`((a + 1) ? (b + 1) : (c + 1))`],
+  [`(? (* A B) (+ C 1) (- D 1))`],      [`((A * B) ? (C + 1) : (D - 1))`],
+  [`(? (= a 1) b c)`],                  [`((a = 1) ? b : c)`],
+  [`(? a (= b 1) c)`],                  [`(a ? (b = 1) : c)`],
+  [`(? a b (= c 1))`],                  [`(a ? b : (c = 1))`],
 )
 
 === Asignación ternaria ($"ContAsignacion" arrow E E$)
 
 La regla $"ContAsignacion" arrow E E$ produce la forma
-`variable = (cond ? then : else)`, diferenciandose de la asignación
+`(variable = (cond ? then : else))`, diferenciándose de la asignación
 simple por el lookahead después de la primera expresión.
 
 #table(
   columns: (1fr, 1fr),
   [*Entrada*], [*Salida*],
-  [`(= a 1 2 3)`],                               [`a = (1 ? 2 : 3)`],
-  [`(= b 0 1 2)`],                               [`b = (0 ? 1 : 2)`],
-  [`(= A 1 2 3)`],                               [`A = (1 ? 2 : 3)`],
-  [`(= a (+ 1 2) 3 4)`],                         [`a = ((1 + 2) ? 3 : 4)`],
-  [`(= a 1 (+ 2 3) 4)`],                         [`a = (1 ? (2 + 3) : 4)`],
-  [`(= a 1 2 (+ 3 4))`],                         [`a = (1 ? 2 : (3 + 4))`],
-  [`(= a (+ b 1) (+ a 1) (? a b c))`],           [`a = ((b + 1) ? (a + 1) : (a ? b : c))`],
-  [`(= x 1 2 3)`],                               [`x = (1 ? 2 : 3)`],
-  [`(= a (+ 1 2) (* 3 4) (- 5 6))`],             [`a = ((1 + 2) ? (3 * 4) : (5 - 6))`],
-  [`(= A (* B 2) (+ A 1) (- A 1))`],             [`A = ((B * 2) ? (A + 1) : (A - 1))`],
-  [`(= a (= b 1) 2 3)`],                         [`a = (b = 1 ? 2 : 3)`],
-  [`(= a 1 (= b 2) 3)`],                         [`a = (1 ? b = 2 : 3)`],
-  [`(= a 1 2 (= b 3))`],                         [`a = (1 ? 2 : b = 3)`],
+  [`(= a 1 2 3)`],                               [`(a = (1 ? 2 : 3))`],
+  [`(= b 0 1 2)`],                               [`(b = (0 ? 1 : 2))`],
+  [`(= A 1 2 3)`],                               [`(A = (1 ? 2 : 3))`],
+  [`(= a (+ 1 2) 3 4)`],                         [`(a = ((1 + 2) ? 3 : 4))`],
+  [`(= a 1 (+ 2 3) 4)`],                         [`(a = (1 ? (2 + 3) : 4))`],
+  [`(= a 1 2 (+ 3 4))`],                         [`(a = (1 ? 2 : (3 + 4)))`],
+  [`(= a (+ b 1) (+ a 1) (? a b c))`],           [`(a = ((b + 1) ? (a + 1) : (a ? b : c)))`],
+  [`(= x 1 2 3)`],                               [`(x = (1 ? 2 : 3))`],
+  [`(= a (+ 1 2) (* 3 4) (- 5 6))`],             [`(a = ((1 + 2) ? (3 * 4) : (5 - 6)))`],
+  [`(= A (* B 2) (+ A 1) (- A 1))`],             [`(A = ((B * 2) ? (A + 1) : (A - 1)))`],
+  [`(= a (= b 1) 2 3)`],                         [`(a = ((b = 1) ? 2 : 3))`],
+  [`(= a 1 (= b 2) 3)`],                         [`(a = (1 ? (b = 2) : 3))`],
+  [`(= a 1 2 (= b 3))`],                         [`(a = (1 ? 2 : (b = 3)))`],
 )
 
 === Combinaciones avanzadas
@@ -350,39 +370,39 @@ aritméticas en múltiples niveles de anidamiento.
   columns: (1fr, 1fr),
   [*Entrada*], [*Salida*],
   [`(+ (= a 1) (= b 2))`],
-    [`(a = 1) + (b = 2)`],
+    [`((a = 1) + (b = 2))`],
   [`(* (= A 1) (= B 2))`],
-    [`(A = 1) * (B = 2)`],
+    [`((A = 1) * (B = 2))`],
   [`(+ (= a (+ 1 2)) b)`],
-    [`(a = (1 + 2)) + b`],
+    [`((a = (1 + 2)) + b)`],
   [`(* (= A (* B 2)) C)`],
-    [`(A = (B * 2)) * C`],
+    [`((A = (B * 2)) * C)`],
   [`(+ (= a 1) (* b 2))`],
-    [`(a = 1) + (b * 2)`],
+    [`((a = 1) + (b * 2))`],
   [`(- (* (= a 2) b) (+ c 1))`],
-    [`((a = 2) * b) - (c + 1)`],
+    [`(((a = 2) * b) - (c + 1))`],
   [`(* (= x (+ 1 2)) (= y (* 3 4)))`],
-    [`(x = (1 + 2)) * (y = (3 * 4))`],
+    [`((x = (1 + 2)) * (y = (3 * 4)))`],
   [`(+ (* (= a 1) b) (* (= c 2) d))`],
-    [`((a = 1) * b) + ((c = 2) * d)`],
+    [`(((a = 1) * b) + ((c = 2) * d))`],
   [`(= a (+ (= b (* 2 3)) (= c (- 5 1))))`],
-    [`a = (b = (2 * 3)) + (c = (5 - 1))`],
+    [`(a = ((b = (2 * 3)) + (c = (5 - 1))))`],
   [`(? (+ a b) (* a b) (- a b))`],
-    [`(a + b) ? (a * b) : (a - b)`],
+    [`((a + b) ? (a * b) : (a - b))`],
   [`(? (= a 1) (+ a 2) (- a 2))`],
-    [`a = 1 ? (a + 2) : (a - 2)`],
+    [`((a = 1) ? (a + 2) : (a - 2))`],
   [`(= x (+ a 1) (* b 2) (? a b c))`],
-    [`x = ((a + 1) ? (b * 2) : (a ? b : c))`],
+    [`(x = ((a + 1) ? (b * 2) : (a ? b : c)))`],
   [`(= A (- B 1) (* A 2) (? A B C))`],
-    [`A = ((B - 1) ? (A * 2) : (A ? B : C))`],
+    [`(A = ((B - 1) ? (A * 2) : (A ? B : C)))`],
   [`(+ (? a 1 2) (? b 3 4))`],
-    [`(a ? 1 : 2) + (b ? 3 : 4)`],
+    [`((a ? 1 : 2) + (b ? 3 : 4))`],
   [`(* (? a b c) (? d e f))`],
-    [`(a ? b : c) * (d ? e : f)`],
+    [`((a ? b : c) * (d ? e : f))`],
   [`(= a (? b c d) (? e f g) (? h i j))`],
-    [`a = ((b ? c : d) ? (e ? f : g) : (h ? i : j))`],
+    [`(a = ((b ? c : d) ? (e ? f : g) : (h ? i : j)))`],
   [`(+ (= a (? b 1 2)) (= c (? d 3 4)))`],
-    [`(a = (b ? 1 : 2)) + (c = (d ? 3 : 4))`],
+    [`((a = (b ? 1 : 2)) + (c = (d ? 3 : 4)))`],
 )
 
 === Edge cases
@@ -396,13 +416,13 @@ construcciones simultáneamente.
   [`(* (+ 1 (* 2 3)) (- 4 (/ 6 2)))`],
     [`((1 + (2 * 3)) * (4 - (6 / 2)))`],
   [`(= a (= b (= c (= d (= e 1)))))`],
-    [`a = b = c = d = e = 1`],
+    [`(a = (b = (c = (d = (e = 1)))))`],
   [`(+ (+ (+ (+ 1 2) 3) 4) 5)`],
     [`((((1 + 2) + 3) + 4) + 5)`],
   [`(* (= a (+ 1 2)) (= b (* (= c 3) 4)))`],
-    [`(a = (1 + 2)) * (b = ((c = 3) * 4))`],
+    [`((a = (1 + 2)) * (b = ((c = 3) * 4)))`],
   [`(? (= a 1) (= b (+ a 1)) (= c (* a 2)))`],
-    [`a = 1 ? b = (a + 1) : c = (a * 2)`],
+    [`((a = 1) ? (b = (a + 1)) : (c = (a * 2)))`],
   [`(= z (+ (* a b) (* c d)) (- (* a b) (* c d)) (? a b c))`],
-    [`z = ((a * b) + (c * d)) ? ((a * b) - (c * d)) : (a ? b : c)`],
+    [`(z = (((a * b) + (c * d)) ? ((a * b) - (c * d)) : (a ? b : c)))`],
 )
