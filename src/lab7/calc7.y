@@ -4,7 +4,7 @@
 #include <stdlib.h>
 
 extern int yylex () ;
-extern int yyerror () ;
+extern int yyerror (char*) ;
 
 char temp [2048] ;
 
@@ -96,34 +96,67 @@ typedef struct s_attr {
                         // SECCION 3: Gramatica - Semantico
 
 
-axioma:         expresion '\n'				{ ; }
-                r_expr					{ ; }
-            |   VARIABLE '=' expresion '\n'		{ ; }
-                r_expr					{ ; }
+axioma:     expresion '\n'
+                { printf("%s\n", $1.cadena); FF }
+            r_expr { ; }
+        |   VARIABLE '=' expresion '\n'
+                {
+                    printf("(setq %c %s)\n", (char)$1.indice, $3.cadena); FF
+                }
+            r_expr { ; }
+        |   '@' expresion '\n'
+                {
+                    printf("(print %s)\n", $2.cadena); FF
+                }
+            r_expr { ; }
+        ;
+
+r_expr:         /* lambda */                { ; }
+            |   axioma                      { ; }
             ;
 
 
-r_expr:         /* lambda */				{ ; }
-            |   axioma					{ ; }
+expresion:      termino
+                    { $$.cadena = $1.cadena; }
+            |   expresion '+' expresion
+                    {
+                        sprintf(temp, "(+ %s %s)", $1.cadena, $3.cadena);
+                        $$.cadena = genera_cadena(temp);
+                    }
+            |   expresion '-' expresion
+                    {
+                        sprintf(temp, "(- %s %s)", $1.cadena, $3.cadena);
+                        $$.cadena = genera_cadena(temp);
+                    }
+            |   expresion '*' expresion
+                    {
+                        sprintf(temp, "(* %s %s)", $1.cadena, $3.cadena);
+                        $$.cadena = genera_cadena(temp);
+                    }
+            |   expresion '/' expresion
+                    {
+                        sprintf(temp, "(/ %s %s)", $1.cadena, $3.cadena);
+                        $$.cadena = genera_cadena(temp);
+                    }
             ;
 
-expresion:      termino					{ ; }
-            |   expresion '+' expresion   		{ ; }
-            |   expresion '-' expresion   		{ ; }
-            |   expresion '*' expresion   		{ ; }
-            |   expresion '/' expresion   		{ ; }
+termino:        operando
+                    { $$.cadena = $1.cadena; }
+            |   '+' operando %prec SIGNO_UNARIO
+                    { $$.cadena = $2.cadena; }
+            |   '-' operando %prec SIGNO_UNARIO
+                    {
+                        sprintf(temp, "(- %s)", $2.cadena);
+                        $$.cadena = genera_cadena(temp);
+                    }
             ;
 
-termino:        operando				{ ; }                          
-            |   '+' operando %prec SIGNO_UNARIO		{ ; }
-            |   '-' operando %prec SIGNO_UNARIO		{ ; }    
-                                                    
-                                                 
-            ;
-
-operando:       VARIABLE				{ ; }
-            |   NUMERO					{ ; }
-            |   '(' expresion ')'			{ ; }
+operando:       VARIABLE
+                    { $$.cadena = char_to_string((char)$1.indice); }
+            |   NUMERO
+                    { $$.cadena = int_to_string($1.valor); }
+            |   '(' expresion ')'
+                    { $$.cadena = $2.cadena; }
             ;
 
 %%
