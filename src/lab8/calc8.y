@@ -56,15 +56,61 @@ char *char_to_string(char c)
 }
 
 
-typedef struct s_attr {
-        int valor ;
-	int indice ;
-        char *cadena ;
-} t_attr ;
+typedef struct ASTnode t_node ;
+
+struct ASTnode {
+    char   *op ;      
+    int     type ;    
+    t_node *left ;
+    t_node *right ;
+} ;
+
+t_node *createASTNode (char *op, int type, t_node *left, t_node *right)
+{
+    t_node *node ;
+    node        = (t_node *) malloc (sizeof (t_node)) ;
+    node->op    = strdup (op) ;
+    node->type  = type ;
+    node->left  = left ;
+    node->right = right ;
+    return node ;
+}
+
+void freeAST (t_node *node)
+{
+    if (node != NULL) {
+        freeAST (node->left) ;
+        freeAST (node->right) ;
+        free (node->op) ;
+        free (node) ;
+    }
+}
+
+void printAST2Prefix (t_node *node)
+{
+    if (node == NULL) {
+        return ;
+    } else if (node->type == 0) {
+        printf ("%s ", node->op) ;          
+    } else if (node->type == 1) {
+        printf ("(%s ", node->op) ;         
+        printAST2Prefix (node->left) ;
+        printf (") ") ;
+    } else {
+        printf ("(%s ", node->op) ;         
+        printAST2Prefix (node->left) ;
+        printAST2Prefix (node->right) ;
+        printf (") ") ;
+    }
+}
 
 #define YYSTYPE t_attr
-
-
+typedef struct s_attr {
+        int     valor ;
+        int     indice ;
+        char   *cadena ;
+        t_node *node ;      
+} t_attr ;
 
 %}
 
@@ -100,16 +146,33 @@ typedef struct s_attr {
 
 
 axioma:     expresion '\n'
-                { printf("%s\n", $1.cadena); FF }
-            r_expr { ; }
-        |   VARIABLE '=' expresion '\n'
                 {
-                    printf("(setq %c %s)\n", (char)$1.indice, $3.cadena); FF
+                    printAST2Prefix ($1.node) ;
+                    printf ("\n") ; FF
+                    freeAST ($1.node) ;
                 }
             r_expr { ; }
+
+        |   VARIABLE '=' expresion '\n'
+                {
+                    /* (setq X <expr>) -> nodo binario con op="setq" */
+                    t_node *var = createASTNode (
+                                    char_to_string ((char)$1.indice),
+                                    0, NULL, NULL) ;
+                    t_node *asign = createASTNode ("setq", 2, var, $3.node) ;
+                    printAST2Prefix (asign) ;
+                    printf ("\n") ; FF
+                    freeAST (asign) ;
+                }
+            r_expr { ; }
+
         |   '@' expresion '\n'
                 {
-                    printf("(print %s)\n", $2.cadena); FF
+                    /* (print <expr>) -> nodo unario con op="print" */
+                    t_node *p = createASTNode ("print", 1, $2.node, NULL) ;
+                    printAST2Prefix (p) ;
+                    printf ("\n") ; FF
+                    freeAST (p) ;
                 }
             r_expr { ; }
         ;
@@ -119,47 +182,47 @@ r_expr:         /* lambda */                { ; }
             ;
 
 
-expresion:      termino
-                    { $$.cadena = $1.cadena; }
+expresion:         termino
+                    { $$.node = $1.node ; }
+
             |   expresion '+' expresion
-                    {
-                        sprintf(temp, "(+ %s %s)", $1.cadena, $3.cadena);
-                        $$.cadena = genera_cadena(temp);
-                    }
+                    { $$.node = createASTNode ("+", 2, $1.node, $3.node) ; }
+
             |   expresion '-' expresion
-                    {
-                        sprintf(temp, "(- %s %s)", $1.cadena, $3.cadena);
-                        $$.cadena = genera_cadena(temp);
-                    }
+                    { $$.node = createASTNode ("-", 2, $1.node, $3.node) ; }
+
             |   expresion '*' expresion
-                    {
-                        sprintf(temp, "(* %s %s)", $1.cadena, $3.cadena);
-                        $$.cadena = genera_cadena(temp);
-                    }
+                    { $$.node = createASTNode ("*", 2, $1.node, $3.node) ; }
+
             |   expresion '/' expresion
-                    {
-                        sprintf(temp, "(/ %s %s)", $1.cadena, $3.cadena);
-                        $$.cadena = genera_cadena(temp);
-                    }
+                    { $$.node = createASTNode ("/", 2, $1.node, $3.node) ; }
             ;
 
-termino:        operando
-                    { $$.cadena = $1.cadena; }
+termino:         operando
+                    { $$.node = $1.node ; }
+
             |   '+' operando %prec SIGNO_UNARIO
-                    { $$.cadena = $2.cadena; }
+                    { $$.node = $2.node ; }          /* signo + unario: no cambia */
+
             |   '-' operando %prec SIGNO_UNARIO
                     {
-                        sprintf(temp, "(- %s)", $2.cadena);
-                        $$.cadena = genera_cadena(temp);
+                        $$.node = createASTNode ("-", 1, $2.node, NULL) ;
                     }
             ;
 
+
 operando:       VARIABLE
-                    { $$.cadena = char_to_string((char)$1.indice); }
+                    {
+                        $$.node = createASTNode (
+                                    char_to_string ((char)$1.indice),
+                                    0, NULL, NULL) ;
+                    }
+
             |   NUMERO
-                    { $$.cadena = int_to_string($1.valor); }
+                    { $$.node = createASTNode (int_to_string ($1.valor), 0, NULL, NULL) ; }
+
             |   '(' expresion ')'
-                    { $$.cadena = $2.cadena; }
+                    { $$.node = $2.node ; }
             ;
 
 %%
