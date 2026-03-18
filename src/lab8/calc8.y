@@ -155,7 +155,6 @@ axioma:     expresion '\n'
 
         |   VARIABLE '=' expresion '\n'
                 {
-                    /* (setq X <expr>) -> nodo binario con op="setq" */
                     t_node *var = createASTNode (
                                     char_to_string ((char)$1.indice),
                                     0, NULL, NULL) ;
@@ -168,7 +167,6 @@ axioma:     expresion '\n'
 
         |   '@' expresion '\n'
                 {
-                    /* (print <expr>) -> nodo unario con op="print" */
                     t_node *p = createASTNode ("print", 1, $2.node, NULL) ;
                     printAST2Prefix (p) ;
                     printf ("\n") ; FF
@@ -177,7 +175,7 @@ axioma:     expresion '\n'
             r_expr { ; }
         ;
 
-r_expr:         /* lambda */                { ; }
+r_expr:                                     { ; }
             |   axioma                      { ; }
             ;
 
@@ -202,7 +200,7 @@ termino:         operando
                     { $$.node = $1.node ; }
 
             |   '+' operando %prec SIGNO_UNARIO
-                    { $$.node = $2.node ; }          /* signo + unario: no cambia */
+                    { $$.node = $2.node ; }
 
             |   '-' operando %prec SIGNO_UNARIO
                     {
