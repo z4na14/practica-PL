@@ -10,7 +10,7 @@
 #define FF fflush(stdout);    // para forzar la impresion inmediata
 
 int yylex () ;
-int yyerror () ;
+int yyerror (char*) ;
 char *mi_malloc (int) ;
 char *gen_code (char *) ;
 char *int_to_string (int) ;
@@ -68,11 +68,26 @@ r_axioma:                                { ; }
             |   axioma                   { ; }
             ;
 
-sentencia:    IDENTIF '=' expresion      { sprintf (temp, "(setq %s %s)", $1.code, $3.code) ; 
-                                           $$.code = gen_code (temp) ; }
-            | '@' expresion              { sprintf (temp, "(print %s)", $2.code) ;  
-                                           $$.code = gen_code (temp) ; }
+sentencia:    INTEGER IDENTIF '=' expresion             { sprintf (temp, "(setq %s %s)", $2.code, $4.code) ; 
+                                                          $$.code = gen_code (temp) ; }
+            | '@' expresion                             { sprintf (temp, "(print %s)", $2.code) ;  
+                                                          $$.code = gen_code (temp) ; }
+            | INTEGER IDENTIF                           { sprintf (temp, "(setq %s 0)", $2.code) ;
+                                                          $$.code = gen_code (temp) ; }
+            | INTEGER IDENTIF mult_asign                { sprintf (temp, "(setq %s 0) %s", $2.code, $3.code) ;
+                                                          $$.code = gen_code (temp) ; }
+            | INTEGER IDENTIF '=' expresion mult_asign  { sprintf (temp, "(setq %s %s) %s", $2.code, $4.code, $5.code) ;
+                                                          $$.code = gen_code (temp) ; }
             ;
+
+mult_asign:   ',' IDENTIF '=' expresion mult_asign      { sprintf (temp, "(setq %s %s) %s", $2.code, $4.code, $5.code) ;
+                                                          $$.code = gen_code (temp) ; }
+            | ',' IDENTIF ','  mult_asign               { sprintf (temp, "(setq %s 0) %s", $2.code, $3.code) ;
+                                                          $$.code = gen_code (temp) ; }
+            | ',' IDENTIF '=' expresion                 { sprintf (temp, "(setq %s %s)", $2.code, $4.code) ; 
+                                                          $$.code = gen_code (temp) ; }
+            | ',' IDENTIF                               { sprintf (temp, "(setq %s 0)", $2.code) ;
+                                                          $$.code = gen_code (temp) ; }
           
 expresion:      termino                  { $$ = $1 ; }
             |   expresion '+' expresion  { sprintf (temp, "(+ %s %s)", $1.code, $3.code) ;
@@ -103,15 +118,12 @@ operando:       IDENTIF                  { sprintf (temp, "%s", $1.code) ;
 
 int n_line = 1 ;
 
-int yyerror (mensaje)
-char *mensaje ;
-{
+int yyerror (char* mensaje) {
     fprintf (stderr, "%s en la linea %d\n", mensaje, n_line) ;
     printf ( "\n") ;	// bye
 }
 
-char *int_to_string (int n)
-{
+char *int_to_string (int n) {
     char ltemp [2048] ;
 
     sprintf (ltemp, "%d", n) ;
@@ -119,8 +131,7 @@ char *int_to_string (int n)
     return gen_code (ltemp) ;
 }
 
-char *char_to_string (char c)
-{
+char *char_to_string (char c) {
     char ltemp [2048] ;
 
     sprintf (ltemp, "%c", c) ;
@@ -128,8 +139,7 @@ char *char_to_string (char c)
     return gen_code (ltemp) ;
 }
 
-char *my_malloc (int nbytes)       // reserva n bytes de memoria dinamica
-{
+char *my_malloc (int nbytes) { // reserva n bytes de memoria dinamica 
     char *p ;
     static long int nb = 0;        // sirven para contabilizar la memoria
     static int nv = 0 ;            // solicitada en total
@@ -156,7 +166,7 @@ typedef struct s_keyword { // para las palabras reservadas de C
     int token ;
 } t_keyword ;
 
-t_keyword keywords [] = { // define las palabras reservadas y los
+t_keyword keywords [] = {          // define las palabras reservadas y los
     "main",        MAIN,           // y los token asociados
     "int",         INTEGER,
     NULL,          0               // para marcar el fin de la tabla
@@ -187,7 +197,7 @@ t_keyword *search_keyword (char *symbol_name)
 /***************************************************************************/
 
 char *gen_code (char *name)     // copia el argumento a un
-{                                      // string en memoria dinamica
+{                               // string en memoria dinamica
     char *p ;
     int l ;
 	
