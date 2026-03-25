@@ -82,7 +82,7 @@ sentencia:    INTEGER IDENTIF '=' expresion             { sprintf (temp, "(setq 
 
 mult_asign:   ',' IDENTIF '=' expresion mult_asign      { sprintf (temp, "(setq %s %s) %s", $2.code, $4.code, $5.code) ;
                                                           $$.code = gen_code (temp) ; }
-            | ',' IDENTIF ','  mult_asign               { sprintf (temp, "(setq %s 0) %s", $2.code, $3.code) ;
+            | ',' IDENTIF mult_asign               { sprintf (temp, "(setq %s 0) %s", $2.code, $3.code) ;
                                                           $$.code = gen_code (temp) ; }
             | ',' IDENTIF '=' expresion                 { sprintf (temp, "(setq %s %s)", $2.code, $4.code) ; 
                                                           $$.code = gen_code (temp) ; }

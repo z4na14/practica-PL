@@ -1,0 +1,169 @@
+// ============================================================
+// TESTS - PASO 1: Variables Globales
+// Traductor C -> Lisp (notacion prefija)
+// Uso: cat tests_paso1_variables_globales.txt | ./trad1
+// ============================================================
+//
+// FORMATO DE CADA TEST:
+//   - Entrada C (lo que se pasa al traductor)
+//   - Salida Lisp esperada indicada en comentario
+//
+// ============================================================
+
+// --- TEST 1: Declaracion simple de una variable ---
+// Entrada:  int x;
+// Esperado: (setq x 0)
+int x;
+
+// --- TEST 2: Declaracion con nombre largo ---
+// Entrada:  int contador;
+// Esperado: (setq contador 0)
+int contador;
+
+// --- TEST 3: Identificador de un solo caracter ---
+// Entrada:  int a;
+// Esperado: (setq a 0)
+int a;
+
+// --- TEST 4: Identificador con digitos al final ---
+// Entrada:  int var1;
+// Esperado: (setq var1 0)
+int var1;
+
+// --- TEST 5: Identificador con digitos en el medio ---
+// Entrada:  int res2val;
+// Esperado: (setq res2val 0)
+int res2val;
+
+// --- TEST 6: Inicializacion con valor 0 explicito ---
+// Entrada:  int z = 0;
+// Esperado: (setq z 0)
+int z = 0;
+
+// --- TEST 7: Inicializacion con valor 1 ---
+// Entrada:  int activo = 1;
+// Esperado: (setq activo 1)
+int activo = 1;
+
+// --- TEST 8: Inicializacion con valor positivo pequeno ---
+// Entrada:  int limite = 5;
+// Esperado: (setq limite 5)
+int limite = 5;
+
+// --- TEST 9: Inicializacion con valor de dos cifras ---
+// Entrada:  int total = 42;
+// Esperado: (setq total 42)
+int total = 42;
+
+// --- TEST 10: Inicializacion con valor grande ---
+// Entrada:  int maximo = 32767;
+// Esperado: (setq maximo 32767)
+int maximo = 32767;
+
+// --- TEST 11: Inicializacion con valor de tres cifras ---
+// Entrada:  int nivel = 100;
+// Esperado: (setq nivel 100)
+int nivel = 100;
+
+// --- TEST 12: Identificador con mezcla de letras y numeros ---
+// Entrada:  int x1 = 10;
+// Esperado: (setq x1 10)
+int x1 = 10;
+
+// --- TEST 13: Dos variables sin inicializar ---
+// Entrada:  int a, b;
+// Esperado: (setq a 0) (setq b 0)
+int a, b;
+
+// --- TEST 14: Tres variables sin inicializar ---
+// Entrada:  int i, j, k;
+// Esperado: (setq i 0) (setq j 0) (setq k 0)
+int i, j, k;
+
+// --- TEST 15: Cuatro variables sin inicializar ---
+// Entrada:  int a, b, c, d;
+// Esperado: (setq a 0) (setq b 0) (setq c 0) (setq d 0)
+int a, b, c, d;
+
+// --- TEST 16: Primera variable inicializada, segunda no ---
+// Entrada:  int x = 3, y;
+// Esperado: (setq x 3) (setq y 0)
+int x = 3, y;
+
+// --- TEST 17: Primera sin inicializar, segunda inicializada ---
+// Entrada:  int x, y = 5;
+// Esperado: (setq x 0) (setq y 5)
+int x, y = 5;
+
+// --- TEST 18: Ambas variables inicializadas ---
+// Entrada:  int x = 1, y = 2;
+// Esperado: (setq x 1) (setq y 2)
+int x = 1, y = 2;
+
+// --- TEST 19: Primera y tercera inicializadas, segunda no ---
+// Entrada:  int a = 10, b, c = 20;
+// Esperado: (setq a 10) (setq b 0) (setq c 20)
+int a = 10, b, c = 20;
+
+// --- TEST 20: Primera no, segunda inicializada, tercera no ---
+// Entrada:  int a, b = 7, c;
+// Esperado: (setq a 0) (setq b 7) (setq c 0)
+int a, b = 7, c;
+
+// --- TEST 21: Tres variables todas inicializadas ---
+// Entrada:  int p = 1, q = 2, r = 3;
+// Esperado: (setq p 1) (setq q 2) (setq r 3)
+int p = 1, q = 2, r = 3;
+
+// --- TEST 22: Cinco variables sin inicializar ---
+// Entrada:  int a, b, c, d, e;
+// Esperado: (setq a 0) (setq b 0) (setq c 0) (setq d 0) (setq e 0)
+int a, b, c, d, e;
+
+// --- TEST 23: Variables con numeros en nombre, todas inicializadas ---
+// Entrada:  int x1 = 1, x2 = 2, x3 = 3;
+// Esperado: (setq x1 1) (setq x2 2) (setq x3 3)
+int x1 = 1, x2 = 2, x3 = 3;
+
+// --- TEST 24: Dos declaraciones separadas en lineas distintas ---
+// Entrada:  int suma;
+//           int producto;
+// Esperado: (setq suma 0) (setq producto 0)
+int suma;
+int producto;
+
+// --- TEST 25: Tres declaraciones en lineas separadas con inicializacion ---
+// Entrada:  int inicio = 0;
+//           int fin = 99;
+//           int paso = 1;
+// Esperado: (setq inicio 0) (setq fin 99) (setq paso 1)
+int inicio = 0;
+int fin = 99;
+int paso = 1;
+
+// --- TEST 26: Mezcla de declaraciones simples e inicializadas en lineas distintas ---
+// Entrada:  int aux;
+//           int resultado = 8;
+// Esperado: (setq aux 0) (setq resultado 8)
+int aux;
+int resultado = 8;
+
+// --- TEST 27: Identificador largo con valor grande ---
+// Entrada:  int numeromaxenteros = 10000;
+// Esperado: (setq numeromaxenteros 10000)
+int numeromaxenteros = 10000;
+
+// --- TEST 28: Tres variables todas inicializadas a cero ---
+// Entrada:  int a = 0, b = 0, c = 0;
+// Esperado: (setq a 0) (setq b 0) (setq c 0)
+int a = 0, b = 0, c = 0;
+
+// --- TEST 29: Declaracion multiple con ultimo inicializado ---
+// Entrada:  int a, b, c = 99;
+// Esperado: (setq a 0) (setq b 0) (setq c 99)
+int a, b, c = 99;
+
+// --- TEST 30: Declaracion multiple solo el primero sin inicializar ---
+// Entrada:  int a, b = 5, c = 10, d = 15;
+// Esperado: (setq a 0) (setq b 5) (setq c 10) (setq d 15)
+int a, b = 5, c = 10, d = 15;
