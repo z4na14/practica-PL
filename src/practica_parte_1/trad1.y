@@ -51,14 +51,24 @@ typedef struct s_attr {
 %token PUTS
 %token PRINTF
 %token MAIN          // identifica el comienzo del proc. main
+%token OR
+%token AND
+%token NEQ
+%token EQ
+%token LTEQ
+%token GTEQ
 %token WHILE         // identifica el bucle main
 
 
 
 %right '='                    // es la ultima operacion que se debe realizar
+%left OR
+%left AND 
+%left EQ NEQ
+%left '>' '<' LTEQ GTEQ
 %left '+' '-'                 // menor orden de precedencia
-%left '*' '/'                 // orden de precedencia intermedio
-%left UNARY_SIGN              // mayor orden de precedencia
+%left '*' '/' '%'                 // orden de precedencia intermedio
+%right '!' UNARY_SIGN              // mayor orden de precedencia
 
 %%                            // Seccion 3 Gramatica - Semantico
 
@@ -125,12 +135,32 @@ expresion:      termino                  { $$ = $1 ; }
                                            $$.code = gen_code (temp) ; }
             |   expresion '/' expresion  { sprintf (temp, "(/ %s %s)", $1.code, $3.code) ;
                                            $$.code = gen_code (temp) ; }
+            |   expresion AND expresion  { sprintf (temp, "(and %s %s)", $1.code, $3.code) ; 
+                                           $$.code = gen_code (temp) ; }
+            |   expresion OR expresion  { sprintf (temp, "(or %s %s)", $1.code, $3.code) ; 
+                                           $$.code = gen_code (temp) ; }
+            |   expresion NEQ expresion  { sprintf (temp, "(/= %s %s)", $1.code, $3.code) ; 
+                                           $$.code = gen_code (temp) ; }
+            |   expresion EQ expresion  { sprintf (temp, "(= %s %s)", $1.code, $3.code) ; 
+                                           $$.code = gen_code (temp) ; }
+            |   expresion '<' expresion  { sprintf (temp, "(< %s %s)", $1.code, $3.code) ; 
+                                           $$.code = gen_code (temp) ; }
+            |   expresion LTEQ expresion  { sprintf (temp, "(<= %s %s)", $1.code, $3.code) ; 
+                                           $$.code = gen_code (temp) ; }
+            |   expresion '>' expresion  { sprintf (temp, "(> %s %s)", $1.code, $3.code) ; 
+                                           $$.code = gen_code (temp) ; }
+            |   expresion GTEQ expresion  { sprintf (temp, "(>= %s %s)", $1.code, $3.code) ; 
+                                           $$.code = gen_code (temp) ; }
+            |   expresion '%' expresion  { sprintf (temp, "(mod %s %s)", $1.code, $3.code) ; 
+                                           $$.code = gen_code (temp) ; }
             ;
 
 termino:        operando                           { $$ = $1 ; }                          
             |   '+' operando %prec UNARY_SIGN      { $$ = $1 ; }
             |   '-' operando %prec UNARY_SIGN      { sprintf (temp, "(- %s)", $2.code) ;
-                                                     $$.code = gen_code (temp) ; }    
+                                                     $$.code = gen_code (temp) ; }   
+            |   '!' operando %prec '!'             { sprintf (temp, "not %s", $2.code) ;
+                                                     $$.code = gen_code (temp) ;}
             ;
 
 operando:       IDENTIF                  { sprintf (temp, "%s", $1.code) ;
@@ -198,6 +228,12 @@ t_keyword keywords [] = {          // define las palabras reservadas y los
     "int",         INTEGER,
     "puts",        PUTS,
     "printf",      PRINTF,
+    "||",          OR,
+    "&&",          AND,
+    "==",          EQ,
+    "!=",          NEQ,
+    ">=",          GTEQ,
+    "<=",          LTEQ,
     NULL,          0               // para marcar el fin de la tabla
 } ;
 
