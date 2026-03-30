@@ -89,9 +89,15 @@ funcion_main: INTEGER MAIN '(' ')' '{' cuerpo '}'       { sprintf(temp, "(defun 
 
 cuerpo:     cuerpo sentencia ';'                        { sprintf(temp, "\t%s\n\t%s", $1.code, $2.code) ;
                                                           $$.code = gen_code(temp) ; }
+            | cuerpo bucle_while                        { sprintf(temp, "\t%s\n\t%s", $1.code, $2.code) ;
+                                                          $$.code = gen_code(temp) ; }
             |                                           { $$.code = gen_code("") ; }
-            ;    
+            ;
 
+bucle_while:    WHILE '(' expresion ')' '{' cuerpo '}'                 { sprintf (temp, "(loop while %s do %s)", $3.code, $6.code) ;
+                                                                          $$.code = gen_code(temp) ; }
+            ;
+ 
 sentencia:    INTEGER IDENTIF '=' expresion                            { sprintf (temp, "(setq %s %s)", $2.code, $4.code) ; 
                                                                         $$.code = gen_code (temp) ; }
             | PRINTF '(' STRING ',' elemento mult_elementos ')'        { sprintf (temp, "(princ %s) %s", $5.code, $6.code) ;  
@@ -102,6 +108,8 @@ sentencia:    INTEGER IDENTIF '=' expresion                            { sprintf
                                                                         $$.code = gen_code (temp) ; }
             | INTEGER IDENTIF '=' expresion mult_asign                 { sprintf (temp, "(setq %s %s) %s", $2.code, $4.code, $5.code) ;
                                                                         $$.code = gen_code (temp) ; }
+            | IDENTIF '=' expresion                                    { sprintf (temp, "(setq %s %s)", $1.code, $3.code) ;
+                                                                        $$.code = gen_code(temp) ; }
             | PUTS '(' STRING ')'                                      { sprintf(temp, "(print \"%s\")", $3.code) ;
                                                                         $$.code = gen_code (temp) ; }
             ;
@@ -226,6 +234,7 @@ typedef struct s_keyword { // para las palabras reservadas de C
 t_keyword keywords [] = {          // define las palabras reservadas y los
     "main",        MAIN,           // y los token asociados
     "int",         INTEGER,
+    "while",       WHILE,
     "puts",        PUTS,
     "printf",      PRINTF,
     "||",          OR,
