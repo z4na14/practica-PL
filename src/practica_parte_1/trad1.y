@@ -48,6 +48,8 @@ typedef struct s_attr {
 %token IDENTIF       // Identificador=variable
 %token INTEGER       // identifica el tipo entero
 %token STRING
+%token PUTS
+%token PRINTF
 %token MAIN          // identifica el comienzo del proc. main
 %token WHILE         // identifica el bucle main
 
@@ -60,34 +62,59 @@ typedef struct s_attr {
 
 %%                            // Seccion 3 Gramatica - Semantico
 
-axioma:       sentencia ';'              { printf ("%s\n", $1.code) ; }
-                r_axioma                 { ; }
+axioma:     declaraciones funcion_main                  { sprintf (temp, "%s\n%s", $1.code, $2.code) ;
+                                                          $$.code = gen_code(temp) ; 
+                                                          printf("%s\n", $$.code) ; }
+
+declaraciones: declaraciones sentencia ';'              { sprintf(temp, "%s\n%s", $1.code, $2.code) ;
+                                                          $$.code = gen_code(temp) ; }
+            |  sentencia ';'                            { sprintf(temp, "%s", $1.code) ;
+                                                          $$.code = gen_code(temp) ; }                
             ;
 
-r_axioma:                                { ; }
-            |   axioma                   { ; }
+funcion_main: INTEGER MAIN '(' ')' '{' cuerpo '}'       { sprintf(temp, "(defun main ()%s\n)", $6.code) ; 
+                                                          $$.code = gen_code(temp) ; }
+            |                                           { $$.code = gen_code("") ; }
             ;
 
-sentencia:    INTEGER IDENTIF '=' expresion             { sprintf (temp, "(setq %s %s)", $2.code, $4.code) ; 
-                                                          $$.code = gen_code (temp) ; }
-            | '@' expresion                             { sprintf (temp, "(print %s)", $2.code) ;  
-                                                          $$.code = gen_code (temp) ; }
-            | INTEGER IDENTIF                           { sprintf (temp, "(setq %s 0)", $2.code) ;
-                                                          $$.code = gen_code (temp) ; }
-            | INTEGER IDENTIF mult_asign                { sprintf (temp, "(setq %s 0) %s", $2.code, $3.code) ;
-                                                          $$.code = gen_code (temp) ; }
-            | INTEGER IDENTIF '=' expresion mult_asign  { sprintf (temp, "(setq %s %s) %s", $2.code, $4.code, $5.code) ;
-                                                          $$.code = gen_code (temp) ; }
+cuerpo:     cuerpo sentencia ';'                        { sprintf(temp, "\t%s\n\t%s", $1.code, $2.code) ;
+                                                          $$.code = gen_code(temp) ; }
+            |                                           { $$.code = gen_code("") ; }
+            ;    
+
+sentencia:    INTEGER IDENTIF '=' expresion                            { sprintf (temp, "(setq %s %s)", $2.code, $4.code) ; 
+                                                                        $$.code = gen_code (temp) ; }
+            | PRINTF '(' STRING ',' elemento mult_elementos ')'        { sprintf (temp, "(princ %s) %s", $5.code, $6.code) ;  
+                                                                        $$.code = gen_code (temp) ; }
+            | INTEGER IDENTIF                                          { sprintf (temp, "(setq %s 0)", $2.code) ;
+                                                                        $$.code = gen_code (temp) ; }
+            | INTEGER IDENTIF mult_asign                               { sprintf (temp, "(setq %s 0) %s", $2.code, $3.code) ;
+                                                                        $$.code = gen_code (temp) ; }
+            | INTEGER IDENTIF '=' expresion mult_asign                 { sprintf (temp, "(setq %s %s) %s", $2.code, $4.code, $5.code) ;
+                                                                        $$.code = gen_code (temp) ; }
+            | PUTS '(' STRING ')'                                      { sprintf(temp, "(print \"%s\")", $3.code) ;
+                                                                        $$.code = gen_code (temp) ; }
             ;
+
+elemento:   expresion                                   { $$.code = $1.code ; }
+            | STRING                                    { sprintf(temp, "\"%s\"", $1.code) ;
+                                                          $$.code = gen_code(temp) ; }
+            ;
+
+mult_elementos: ',' elemento mult_elementos             { sprintf(temp, "(princ %s) %s", $2.code, $3.code) ;
+                                                          $$.code = gen_code(temp) ; }
+                |                                       { $$.code = gen_code("") ; }
+                ;    
 
 mult_asign:   ',' IDENTIF '=' expresion mult_asign      { sprintf (temp, "(setq %s %s) %s", $2.code, $4.code, $5.code) ;
                                                           $$.code = gen_code (temp) ; }
-            | ',' IDENTIF mult_asign               { sprintf (temp, "(setq %s 0) %s", $2.code, $3.code) ;
+            | ',' IDENTIF mult_asign                    { sprintf (temp, "(setq %s 0) %s", $2.code, $3.code) ;
                                                           $$.code = gen_code (temp) ; }
             | ',' IDENTIF '=' expresion                 { sprintf (temp, "(setq %s %s)", $2.code, $4.code) ; 
                                                           $$.code = gen_code (temp) ; }
             | ',' IDENTIF                               { sprintf (temp, "(setq %s 0)", $2.code) ;
                                                           $$.code = gen_code (temp) ; }
+            ;
           
 expresion:      termino                  { $$ = $1 ; }
             |   expresion '+' expresion  { sprintf (temp, "(+ %s %s)", $1.code, $3.code) ;
@@ -169,6 +196,8 @@ typedef struct s_keyword { // para las palabras reservadas de C
 t_keyword keywords [] = {          // define las palabras reservadas y los
     "main",        MAIN,           // y los token asociados
     "int",         INTEGER,
+    "puts",        PUTS,
+    "printf",      PRINTF,
     NULL,          0               // para marcar el fin de la tabla
 } ;
 
