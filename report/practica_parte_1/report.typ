@@ -4,8 +4,8 @@
   degree: "Ingenieria Informatica",
   subject: "Procesadores de Lenguaje",
   year: (25, 26),
-  project: "Top-Down",
-  title: "Calculadora",
+  project: "Practica Final - Segunda Parte",
+  title: "Traductor de un subconjunto de C a un lenguaje de notación prefija (Lisp)",
   group: 81,
   authors: (
     (
@@ -35,13 +35,30 @@
 #show table.cell.where(y: 0) : set text(weight: "bold")
 
 
-= Variables globales
+= Avance segunda parte
 
-Para la inclusión de definiciones globales, hemos cambiado la gramática para que las reglas de sentencia se traduzcan a (setq <id> 0) o a (setq <id> termino). También hemos incluido un no terminal para poder realizar la definición multiple de variables con asignaciones opcionales. Dicho no terminal lo hemos llamado mult_asign y realiza llamadas recursivas. 
+Durante Semana Santa, se ha desarrollado solamente el primer punto como parte del avance.
 
-Para probar su correcto funcionamiento, hemos creado un archivo .txt que realiza los siguientes ejemplos de prueba:
+== Estructura de control IF
 
-== Tests — Paso 1: Variables Globales
+En este punto se pedía implementar la traducción de la estructura if/else, donde las reglas de traducción son:
+
+- `if (<expr>) { <codigo> }`
+  - `(if <expr> <codigo>)`
+- `if (<expr>) { <codigo1> } else { <codigo2> }`
+  - `(if <expr> <codigo1> <codigo2>)`
+
+El uso de `progn` permite agrupar múltiples sentencias en cada rama, tal como exige Lisp. Los bloques `{` y `}` son obligatorios, lo que resuelve el conflicto shift/reduce que menciona el enunciado. La regla `control_if` está integrada dentro de cuerpo, por lo que puede aparecer correctamente dentro del `main`.
+
+== Variables locales
+
+Solamente se han puesto las declaraciones necesarias para llevar a cabo esta parte. El objetivo es, a diferencia de las variables globales, es concatenar el nombre de la función, con un guión bajo, al nombre de la función (en vez de `-` ya que este sería ambiguo), con el objetivo de poder ser llamadas solamente en su respectivo scope.
+
+Para saber si una variable usada dentro de una funcion es local o global, se va a mantener una tabla de variables locales donde se inserten todas las declaradas dentro del cuerpo de la función. Si una variable no aparece en esa tabla, es global y no se concatena.
+
+== Tests
+
+Solamente se ha probado la parte 7 del enunciado, ya que es la única desarrollada para esta entrega opcional.
 
 #table(
   columns: (auto, 1fr, 1fr, 2fr),
@@ -52,73 +69,24 @@ Para probar su correcto funcionamiento, hemos creado un archivo .txt que realiza
     [*Nº*], [*Descripción*], [*Entrada C*], [*Salida Lisp esperada*],
   ),
 
-  [1], [Declaración simple de una variable], [`int x;`], [`(setq x 0)`],
-  [2], [Declaración con nombre largo], [`int contador;`], [`(setq contador 0)`],
-  [3], [Identificador de un solo carácter], [`int a;`], [`(setq a 0)`],
-  [4], [Identificador con dígitos al final], [`int var1;`], [`(setq var1 0)`],
-  [5], [Identificador con dígitos en el medio], [`int res2val;`], [`(setq res2val 0)`],
-  [6], [Inicialización con valor 0 explícito], [`int z = 0;`], [`(setq z 0)`],
-  [7], [Inicialización con valor 1], [`int activo = 1;`], [`(setq activo 1)`],
-  [8], [Inicialización con valor positivo pequeño], [`int limite = 5;`], [`(setq limite 5)`],
-  [9], [Inicialización con valor de dos cifras], [`int total = 42;`], [`(setq total 42)`],
-  [10], [Inicialización con valor grande], [`int maximo = 32767;`], [`(setq maximo 32767)`],
-  [11], [Inicialización con valor de tres cifras], [`int nivel = 100;`], [`(setq nivel 100)`],
-  [12], [Identificador con mezcla de letras y números], [`int x1 = 10;`], [`(setq x1 10)`],
-  [13], [Dos variables sin inicializar], [`int a, b;`], [`(setq a 0) (setq b 0)`],
-  [14], [Tres variables sin inicializar], [`int i, j, k;`], [`(setq i 0) (setq j 0) (setq k 0)`],
-  [15], [Cuatro variables sin inicializar], [`int a, b, c, d;`], [`(setq a 0) (setq b 0) (setq c 0) (setq d 0)`],
-  [16], [Primera inicializada, segunda no], [`int x = 3, y;`], [`(setq x 3) (setq y 0)`],
-  [17], [Primera no, segunda inicializada], [`int x, y = 5;`], [`(setq x 0) (setq y 5)`],
-  [18], [Ambas variables inicializadas], [`int x = 1, y = 2;`], [`(setq x 1) (setq y 2)`],
-  [19], [Primera y tercera inicializadas, segunda no], [`int a = 10, b, c = 20;`], [`(setq a 10) (setq b 0) (setq c 20)`],
-  [20], [Primera no, segunda inicializada, tercera no], [`int a, b = 7, c;`], [`(setq a 0) (setq b 7) (setq c 0)`],
-  [21], [Tres variables todas inicializadas], [`int p = 1, q = 2, r = 3;`], [`(setq p 1) (setq q 2) (setq r 3)`],
-  [22], [Cinco variables sin inicializar], [`int a, b, c, d, e;`], [`(setq a 0) (setq b 0) (setq c 0) (setq d 0) (setq e 0)`],
-  [23], [Variables con números en nombre, todas inicializadas], [`int x1 = 1, x2 = 2, x3 = 3;`], [`(setq x1 1) (setq x2 2) (setq x3 3)`],
-  [24], [Dos declaraciones en líneas distintas], [`int suma;` \ `int producto;`], [`(setq suma 0) (setq producto 0)`],
-  [25], [Tres declaraciones en líneas distintas con inicialización], [`int inicio = 0;` \ `int fin = 99;` \ `int paso = 1;`], [`(setq inicio 0) (setq fin 99) (setq paso 1)`],
-  [26], [Mezcla de simple e inicializada en líneas distintas], [`int aux;` \ `int resultado = 8;`], [`(setq aux 0) (setq resultado 8)`],
-  [27], [Identificador largo con valor grande], [`int numeromaxenteros = 10000;`], [`(setq numeromaxenteros 10000)`],
-  [28], [Tres variables todas inicializadas a cero], [`int a = 0, b = 0, c = 0;`], [`(setq a 0) (setq b 0) (setq c 0)`],
-  [29], [Declaración múltiple con último inicializado], [`int a, b, c = 99;`], [`(setq a 0) (setq b 0) (setq c 99)`],
-  [30], [Múltiple con solo el primero sin inicializar], [`int a, b = 5, c = 10, d = 15;`], [`(setq a 0) (setq b 5) (setq c 10) (setq d 15)`],
+  [1], [IF simple con condición de igualdad], [`if (a == 0) { b = 1; }`], [`(if (= a 0) (progn (setf b 1)))`],
+  [2], [IF simple con condición de desigualdad], [`if (a != 0) { b = 1; }`], [`(if (/= a 0) (progn (setf b 1)))`],
+  [3], [IF simple con condición menor que], [`if (a < 10) { b = 2; }`], [`(if (< a 10) (progn (setf b 2)))`],
+  [4], [IF simple con condición mayor que], [`if (a > 5) { b = 3; }`], [`(if (> a 5) (progn (setf b 3)))`],
+  [5], [IF simple con condición menor o igual], [`if (a <= 10) { b = 4; }`], [`(if (<= a 10) (progn (setf b 4)))`],
+  [6], [IF simple con condición mayor o igual], [`if (a >= 5) { b = 5; }`], [`(if (>= a 5) (progn (setf b 5)))`],
+  [7], [IF con cuerpo de dos sentencias], [`if (a == 1) { b = 2; c = 3; }`], [`(if (= a 1) (progn (setf b 2) (setf c 3)))`],
+  [8], [IF-ELSE simple], [`if (a == 0) { b = 1; } else { b = 2; }`], [`(if (= a 0) (progn (setf b 1)) (progn (setf b 2)))`],
+  [9], [IF-ELSE con varias sentencias en ambas ramas], [`if (a == 0) { b = 1; c = 2; } else { b = 3; c = 4; }`], [`(if (= a 0) (progn (setf b 1) (setf c 2)) (progn (setf b 3) (setf c 4)))`],
+  [10], [IF-ELSE con condición AND], [`if (a == 1 && b == 2) { c = 1; } else { c = 0; }`], [`(if (and (= a 1) (= b 2)) (progn (setf c 1)) (progn (setf c 0)))`],
+  [11], [IF-ELSE con condición OR], [`if (a == 0 || b == 0) { c = 1; } else { c = 0; }`], [`(if (or (= a 0) (= b 0)) (progn (setf c 1)) (progn (setf c 0)))`],
+  [12], [IF con condición negada], [`if (!a) { b = 1; }`], [`(if (not a) (progn (setf b 1)))`],
+  [13], [IF con expresión aritmética en condición], [`if (a + 1 == b) { c = 0; }`], [`(if (= (+ a 1) b) (progn (setf c 0)))`],
+  [14], [IF anidado en rama then], [`if (a == 1) { if (b == 2) { c = 3; } }`], [`(if (= a 1) (progn (if (= b 2) (progn (setf c 3)))))`],
+  [15], [IF-ELSE anidado en rama then], [`if (a == 1) { if (b == 2) { c = 3; } else { c = 4; } }`], [`(if (= a 1) (progn (if (= b 2) (progn (setf c 3)) (progn (setf c 4)))))`],
+  [16], [IF con printf en cuerpo], [`if (a == 1) { printf ("%d", a); }`], [`(if (= a 1) (progn (princ a)))`],
+  [17], [IF-ELSE con puts en ambas ramas], [`if (a == 0) { puts ("cero"); } else { puts ("no cero"); }`], [`(if (= a 0) (progn (print "cero")) (progn (print "no cero")))`],
+  [18], [IF con condición sobre módulo], [`if (a % 2 == 0) { b = 1; }`], [`(if (= (mod a 2) 0) (progn (setf b 1)))`],
+  [19], [IF-ELSE con asignación y printf], [`if (a > 0) { b = a; printf ("%d", b); } else { b = 0; }`], [`(if (> a 0) (progn (setf b a) (princ b)) (progn (setf b 0)))`],
+  [20], [IF con condición compuesta AND y OR], [`if (a == 1 && b == 2 || c == 3) { d = 1; }`], [`(if (or (and (= a 1) (= b 2)) (= c 3)) (progn (setf d 1)))`],
 )
-
-Y la salida que hemos obtenido es:
-```
-(setq x 0)
-(setq contador 0)
-(setq a 0)
-(setq var1 0)
-(setq res2val 0)
-(setq z 0)
-(setq activo 1)
-(setq limite 5)
-(setq total 42)
-(setq maximo 32767)
-(setq nivel 100)
-(setq x1 10)
-(setq a 0) (setq b 0)
-(setq i 0) (setq j 0) (setq k 0)
-(setq a 0) (setq b 0) (setq c 0) (setq d 0)
-(setq x 3) (setq y 0)
-(setq x 0) (setq y 5)
-(setq x 1) (setq y 2)
-(setq a 10) (setq b 0) (setq c 20)
-(setq a 0) (setq b 7) (setq c 0)
-(setq p 1) (setq q 2) (setq r 3)
-(setq a 0) (setq b 0) (setq c 0) (setq d 0) (setq e 0)
-(setq x1 1) (setq x2 2) (setq x3 3)
-(setq suma 0)
-(setq producto 0)
-(setq inicio 0)
-(setq fin 99)
-(setq paso 1)
-(setq aux 0)
-(setq resultado 8)
-(setq numeromaxenteros 10000)
-(setq a 0) (setq b 0) (setq c 0)
-(setq a 0) (setq b 0) (setq c 99)
-(setq a 0) (setq b 5) (setq c 10) (setq d 15)
-
-```
