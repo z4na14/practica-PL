@@ -94,7 +94,14 @@ declaraciones: declaraciones sentencia ';'              { sprintf(temp, "%s\n%s"
                                                           $$.code = gen_code(temp) ; }                
             ;
 
-funcion_main: INTEGER MAIN '(' ')' '{' cuerpo '}'       { sprintf(temp, "(defun main ()%s\n)", $6.code) ; 
+funcion_main: INTEGER MAIN '(' ')'                      
+                                                        { strcpy(nombre_funcion, "main") ;
+                                                          limpiar_locales();
+                                                          en_funcion = 1; }
+
+                '{' cuerpo '}'                           
+                                                        { en_funcion = 0; 
+                                                          sprintf(temp, "(defun main ()%s\n)", $7.code) ; 
                                                           $$.code = gen_code(temp) ; }
             |                                           { $$.code = gen_code("") ; }
             ;
@@ -117,17 +124,41 @@ control_if:     IF '(' expresion ')' '{' cuerpo '}'                    { sprintf
             | IF '(' expresion ')' '{' cuerpo '}' ELSE '{' cuerpo '}'  { sprintf(temp, "(if %s\n\t(progn%s)\n\t(progn%s))", $3.code, $6.code, $10.code) ;
                                                                           $$.code = gen_code(temp) ; }
             ;
-sentencia:    INTEGER IDENTIF '=' expresion                            { sprintf (temp, "(setq %s %s)", $2.code, $4.code) ; 
+sentencia:    INTEGER IDENTIF '=' expresion                            { if (en_funcion) {
+                                                                            insertar_local($2.code) ;
+                                                                            sprintf (temp, "(setq %s %s)", nombre_local($2.code), $4.code) ;
+                                                                         } else {
+                                                                            sprintf (temp, "(setq %s %s)", $2.code, $4.code) ;
+                                                                         }
                                                                         $$.code = gen_code (temp) ; }
             | PRINTF '(' STRING ',' elemento mult_elementos ')'        { sprintf (temp, "(princ %s) %s", $5.code, $6.code) ;  
                                                                         $$.code = gen_code (temp) ; }
-            | INTEGER IDENTIF                                          { sprintf (temp, "(setq %s 0)", $2.code) ;
+            | INTEGER IDENTIF                                          { if (en_funcion) {
+                                                                            insertar_local($2.code);
+                                                                            sprintf (temp, "(setq %s 0)", nombre_local($2.code)) ;
+                                                                        } else {
+                                                                            sprintf (temp, "(setq %s 0)", $2.code) ;
+                                                                        }
                                                                         $$.code = gen_code (temp) ; }
-            | INTEGER IDENTIF mult_asign                               { sprintf (temp, "(setq %s 0) %s", $2.code, $3.code) ;
+            | INTEGER IDENTIF mult_asign                               { if (en_funcion) {
+                                                                            insertar_local($2.code);
+                                                                            sprintf (temp, "(setq %s 0) %s", nombre_local($2.code), $3.code) ;
+                                                                        } else {
+                                                                            sprintf (temp, "(setq %s 0) %s", $2.code, $3.code) ;
+                                                                        }
                                                                         $$.code = gen_code (temp) ; }
-            | INTEGER IDENTIF '=' expresion mult_asign                 { sprintf (temp, "(setq %s %s) %s", $2.code, $4.code, $5.code) ;
+            | INTEGER IDENTIF '=' expresion mult_asign                 { if (en_funcion) {
+                                                                            insertar_local($2.code);
+                                                                            sprintf (temp, "(setq %s %s) %s", nombre_local($2.code), $4.code, $5.code) ;
+                                                                        } else {
+                                                                            sprintf (temp, "(setq %s %s) %s", $2.code, $4.code, $5.code) ;
+                                                                        }
                                                                         $$.code = gen_code (temp) ; }
-            | IDENTIF '=' expresion                                    { sprintf (temp, "(setq %s %s)", $1.code, $3.code) ;
+            | IDENTIF '=' expresion                                    { if (en_funcion && es_local($1.code)) {
+                                                                            sprintf (temp, "(setf %s %s)", nombre_local($1.code), $3.code) ;
+                                                                        } else {
+                                                                            sprintf (temp, "(setf %s %s)", $1.code, $3.code) ;
+                                                                        }
                                                                         $$.code = gen_code(temp) ; }
             | PUTS '(' STRING ')'                                      { sprintf(temp, "(print \"%s\")", $3.code) ;
                                                                         $$.code = gen_code (temp) ; }
@@ -183,15 +214,18 @@ expresion:      termino                  { $$ = $1 ; }
             ;
 
 termino:        operando                           { $$ = $1 ; }                          
-            |   '+' operando %prec UNARY_SIGN      { $$ = $1 ; }
+            |   '+' operando %prec UNARY_SIGN      { $$ = $2 ; }
             |   '-' operando %prec UNARY_SIGN      { sprintf (temp, "(- %s)", $2.code) ;
                                                      $$.code = gen_code (temp) ; }   
-            |   '!' operando %prec '!'             { sprintf (temp, "not %s", $2.code) ;
+            |   '!' operando %prec '!'             { sprintf (temp, "(not %s)", $2.code) ;
                                                      $$.code = gen_code (temp) ;}
             ;
 
-operando:       IDENTIF                  { sprintf (temp, "%s", $1.code) ;
-                                           $$.code = gen_code (temp) ; }
+operando:       IDENTIF                  { if (en_funcion && es_local($1.code))
+                                                sprintf(temp, "%s", nombre_local($1.code)) ;
+                                            else
+                                                sprintf(temp, "%s", $1.code) ;
+                                            $$.code = gen_code(temp) ; }
             |   NUMBER                   { sprintf (temp, "%d", $1.value) ;
                                            $$.code = gen_code (temp) ; }
             |   '(' expresion ')'        { $$ = $2 ; }
@@ -201,6 +235,28 @@ operando:       IDENTIF                  { sprintf (temp, "%s", $1.code) ;
 %%                            // SECCION 4    Codigo en C
 
 int n_line = 1 ;
+
+void insertar_local(char *nombre) {
+    vars_locales[n_vars_locales++] = gen_code(nombre);
+}
+
+int es_local(char *nombre) {
+    int i;
+    for (i = 0; i < n_vars_locales; i++) {
+        if (strcmp(vars_locales[i], nombre) == 0) return 1;
+    }
+    return 0;
+}
+
+void limpiar_locales() {
+    n_vars_locales = 0;
+}
+
+char *nombre_local(char *var) {
+    static char buf[512];
+    sprintf(buf, "%s_%s", nombre_funcion, var);
+    return buf;
+}
 
 int yyerror (char* mensaje) {
     fprintf (stderr, "%s en la linea %d\n", mensaje, n_line) ;
