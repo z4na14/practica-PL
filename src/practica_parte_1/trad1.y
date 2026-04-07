@@ -18,6 +18,16 @@ char *char_to_string (char) ;
 
 char temp [2048] ;
 
+int en_funcion = 0;        // 0 si es variable global, 1 si esta dentro de una función
+char nombre_funcion[256];   // Nombre de la función local
+char *vars_locales[256];    // Tabla de nombres de variables locales
+int n_vars_locales = 0;     // Número de variables locales
+
+void insertar_local(char *nombre); 
+int es_local(char *nombre);
+void limpiar_locales();
+char *nombre_local(char *var);
+
 // Abstract Syntax Tree (AST) Node Structure
 
 typedef struct ASTnode t_node ;
@@ -58,7 +68,8 @@ typedef struct s_attr {
 %token LTEQ
 %token GTEQ
 %token WHILE         // identifica el bucle main
-
+%token IF
+%token ELSE 
 
 
 %right '='                    // es la ultima operacion que se debe realizar
@@ -75,6 +86,7 @@ typedef struct s_attr {
 axioma:     declaraciones funcion_main                  { sprintf (temp, "%s\n%s", $1.code, $2.code) ;
                                                           $$.code = gen_code(temp) ; 
                                                           printf("%s\n", $$.code) ; }
+            ;
 
 declaraciones: declaraciones sentencia ';'              { sprintf(temp, "%s\n%s", $1.code, $2.code) ;
                                                           $$.code = gen_code(temp) ; }
@@ -91,13 +103,20 @@ cuerpo:     cuerpo sentencia ';'                        { sprintf(temp, "\t%s\n\
                                                           $$.code = gen_code(temp) ; }
             | cuerpo bucle_while                        { sprintf(temp, "\t%s\n\t%s", $1.code, $2.code) ;
                                                           $$.code = gen_code(temp) ; }
+            | cuerpo control_if                         { sprintf(temp, "\t%s\n\t%s", $1.code, $2.code) ;
+                                                          $$.code = gen_code(temp) ; }
             |                                           { $$.code = gen_code("") ; }
             ;
 
 bucle_while:    WHILE '(' expresion ')' '{' cuerpo '}'                 { sprintf (temp, "(loop while %s do %s)", $3.code, $6.code) ;
                                                                           $$.code = gen_code(temp) ; }
             ;
- 
+
+control_if:     IF '(' expresion ')' '{' cuerpo '}'                    { sprintf(temp, "(if %s\n\t(progn%s))", $3.code, $6.code) ;
+                                                                          $$.code = gen_code(temp) ; }
+            | IF '(' expresion ')' '{' cuerpo '}' ELSE '{' cuerpo '}'  { sprintf(temp, "(if %s\n\t(progn%s)\n\t(progn%s))", $3.code, $6.code, $10.code) ;
+                                                                          $$.code = gen_code(temp) ; }
+            ;
 sentencia:    INTEGER IDENTIF '=' expresion                            { sprintf (temp, "(setq %s %s)", $2.code, $4.code) ; 
                                                                         $$.code = gen_code (temp) ; }
             | PRINTF '(' STRING ',' elemento mult_elementos ')'        { sprintf (temp, "(princ %s) %s", $5.code, $6.code) ;  
@@ -243,6 +262,8 @@ t_keyword keywords [] = {          // define las palabras reservadas y los
     "!=",          NEQ,
     ">=",          GTEQ,
     "<=",          LTEQ,
+    "if",          IF,
+    "else",        ELSE,
     NULL,          0               // para marcar el fin de la tabla
 } ;
 
