@@ -8,6 +8,8 @@
 #include <stdlib.h>           // declaraciones para exit ()
 
 #define FF fflush(stdout);    // para forzar la impresion inmediata
+#define INC(x) x=x+1;
+#define DEC(x) x=x-1;
 
 int yylex () ;
 int yyerror (char*) ;
@@ -67,9 +69,12 @@ typedef struct s_attr {
 %token EQ
 %token LTEQ
 %token GTEQ
+%token FOR
 %token WHILE         // identifica el bucle main
 %token IF
-%token ELSE 
+%token ELSE
+%token INC
+%token DEC
 
 
 %right '='                    // es la ultima operacion que se debe realizar
@@ -112,11 +117,40 @@ cuerpo:     cuerpo sentencia ';'                        { sprintf(temp, "\t%s\n\
                                                           $$.code = gen_code(temp) ; }
             | cuerpo control_if                         { sprintf(temp, "\t%s\n\t%s", $1.code, $2.code) ;
                                                           $$.code = gen_code(temp) ; }
+            | cuerpo bucle_for                          { sprintf(temp, "\t%s\n%s", $1.code, $2.code) ;
+                                                          $$.code = gen_code(temp) ; }
             |                                           { $$.code = gen_code("") ; }
             ;
 
 bucle_while:    WHILE '(' expresion ')' '{' cuerpo '}'                 { sprintf (temp, "(loop while %s do %s)", $3.code, $6.code) ;
                                                                           $$.code = gen_code(temp) ; }
+            ;
+
+bucle_for:    FOR '(' inicializ ';' expr_cond ';' oper_for ')' '{' cuerpo '}'   { sprintf(temp, "\t%s\n\t(loop while %s do%s\n\t%s)", $3.code, $5.code, $10.code, $7.code) ;
+                                                                                  $$.code = gen_code(temp) ; }
+
+inicializ: IDENTIF '=' expresion                                      { sprintf(temp, "(setf %s %s)", nombre_local($1.code), $3.code) ;
+                                                                        $$.code = gen_code(temp) ; }
+            | INTEGER IDENTIF '=' expresion                           { insertar_local($2.code) ;
+                                                                        sprintf(temp, "(setq %s %s)", nombre_local($2.code), $4.code) ;  
+                                                                        $$.code = gen_code(temp) ;}
+            ;       
+
+expr_cond:  expresion                                                  { $$.code  = $1.code ; }
+            ;
+
+oper_for:   INC '(' IDENTIF ')'                                        { if (en_funcion && es_local($3.code)) {
+                                                                            sprintf(temp, "(setf %s (+ %s 1))", nombre_local($3.code), nombre_local($3.code)) ;
+                                                                        } else {
+                                                                            sprintf(temp, "(setf %s (+ %s 1))", $3.code, $3.code) ;
+                                                                        }
+                                                                        $$.code = gen_code(temp) ; }
+            | DEC '(' IDENTIF ')'                                      { if (en_funcion && es_local($3.code)) {
+                                                                            sprintf(temp, "(setf %s (- %s 1))", nombre_local($3.code), nombre_local($3.code)) ;
+                                                                        } else {
+                                                                            sprintf(temp, "(setf %s (- %s 1))", $3.code, $3.code) ;
+                                                                        }
+                                                                        $$.code = gen_code(temp) ; }
             ;
 
 control_if:     IF '(' expresion ')' '{' cuerpo '}'                    { sprintf(temp, "(if %s\n\t(progn%s))", $3.code, $6.code) ;
@@ -320,6 +354,9 @@ t_keyword keywords [] = {          // define las palabras reservadas y los
     "<=",          LTEQ,
     "if",          IF,
     "else",        ELSE,
+    "for",         FOR,
+    "inc",         INC,
+    "dec",         DEC,
     NULL,          0               // para marcar el fin de la tabla
 } ;
 
