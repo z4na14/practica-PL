@@ -72,17 +72,13 @@ typedef struct s_attr {
 %token FOR
 %token WHILE         // identifica el bucle main
 %token IF
-<<<<<<< HEAD
-%token ELSE
 %token INC
 %token DEC
-=======
 %token ELSE 
 %token SWITCH
 %token CASE
 %token BREAK
 %token DEFAULT
->>>>>>> 214ec09 (switch añadido)
 
 
 %right '='                    // es la ultima operacion que se debe realizar
