@@ -72,9 +72,17 @@ typedef struct s_attr {
 %token FOR
 %token WHILE         // identifica el bucle main
 %token IF
+<<<<<<< HEAD
 %token ELSE
 %token INC
 %token DEC
+=======
+%token ELSE 
+%token SWITCH
+%token CASE
+%token BREAK
+%token DEFAULT
+>>>>>>> 214ec09 (switch añadido)
 
 
 %right '='                    // es la ultima operacion que se debe realizar
@@ -96,7 +104,7 @@ axioma:     declaraciones funcion_main                  { sprintf (temp, "%s\n%s
 declaraciones: declaraciones sentencia ';'              { sprintf(temp, "%s\n%s", $1.code, $2.code) ;
                                                           $$.code = gen_code(temp) ; }
             |  sentencia ';'                            { sprintf(temp, "%s", $1.code) ;
-                                                          $$.code = gen_code(temp) ; }                
+                                                          $$.code = gen_code(temp) ; } 
             ;
 
 funcion_main: INTEGER MAIN '(' ')'                      
@@ -119,6 +127,9 @@ cuerpo:     cuerpo sentencia ';'                        { sprintf(temp, "\t%s\n\
                                                           $$.code = gen_code(temp) ; }
             | cuerpo bucle_for                          { sprintf(temp, "\t%s\n%s", $1.code, $2.code) ;
                                                           $$.code = gen_code(temp) ; }
+            | cuerpo control_switch                     { sprintf(temp, "\t%s\n\t%s", $1.code, $2.code) ;
+                                                          $$.code = gen_code(temp) ; }
+                                                          
             |                                           { $$.code = gen_code("") ; }
             ;
 
@@ -153,11 +164,26 @@ oper_for:   INC '(' IDENTIF ')'                                        { if (en_
                                                                         $$.code = gen_code(temp) ; }
             ;
 
-control_if:     IF '(' expresion ')' '{' cuerpo '}'                    { sprintf(temp, "(if %s\n\t(progn%s))", $3.code, $6.code) ;
-                                                                          $$.code = gen_code(temp) ; }
+control_if:   IF '(' expresion ')' '{' cuerpo '}'                      { sprintf(temp, "(if %s\n\t(progn%s))", $3.code, $6.code) ;
+                                                                         $$.code = gen_code(temp) ; }
             | IF '(' expresion ')' '{' cuerpo '}' ELSE '{' cuerpo '}'  { sprintf(temp, "(if %s\n\t(progn%s)\n\t(progn%s))", $3.code, $6.code, $10.code) ;
-                                                                          $$.code = gen_code(temp) ; }
+                                                                         $$.code = gen_code(temp) ; }
             ;
+
+control_switch: SWITCH '(' IDENTIF ')' '{' switch_cases '}'
+                                                            { sprintf(temp, "(case %s\n%s)", $3.code, $6.code) ;
+                                                              $$.code = gen_code(temp) ; }
+            ;
+
+switch_cases:   switch_cases CASE NUMBER ':' cuerpo BREAK ';'
+                                                            { sprintf(temp, "%s\t(%d%s)\n", $1.code, $3.value, $5.code) ;
+                                                              $$.code = gen_code(temp) ; }
+            |   switch_cases DEFAULT ':' cuerpo BREAK ';'
+                                                            { sprintf(temp, "%s\t(otherwise%s)\n", $1.code, $4.code) ;
+                                                              $$.code = gen_code(temp) ; }
+            |                                               { $$.code = gen_code("") ; }
+            ;
+
 sentencia:    INTEGER IDENTIF '=' expresion                            { if (en_funcion) {
                                                                             insertar_local($2.code) ;
                                                                             sprintf (temp, "(setq %s %s)", nombre_local($2.code), $4.code) ;
@@ -344,6 +370,10 @@ t_keyword keywords [] = {          // define las palabras reservadas y los
     "main",        MAIN,           // y los token asociados
     "int",         INTEGER,
     "while",       WHILE,
+    "switch",      SWITCH,
+    "case",        CASE,
+    "break",       BREAK,
+    "default",     DEFAULT,
     "puts",        PUTS,
     "printf",      PRINTF,
     "||",          OR,
