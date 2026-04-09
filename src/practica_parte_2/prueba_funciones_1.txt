@@ -1,0 +1,31 @@
+#define INC(x) x=x+1
+#define DEC(x) x=x-1
+ 
+int resultado = 0;
+int contador = 0;
+ 
+suma() {
+    int a = 10;
+    int b = 5;
+    resultado = a + b;
+}
+ 
+multiplica() {
+    int a = 3;
+    int b = 4;
+    resultado = a * b;
+}
+ 
+cuenta() {
+    int i = 0;
+    while (i != 5) {
+        contador = contador + 1;
+        i = i + 1;
+    }
+}
+ 
+main() {
+    printf("%d", resultado);
+    printf("%d", resultado);
+    printf("%d", contador);
+}
