@@ -24,11 +24,14 @@ int en_funcion = 0;        // 0 si es variable global, 1 si esta dentro de una f
 char nombre_funcion[256];   // Nombre de la función local
 char *vars_locales[256];    // Tabla de nombres de variables locales
 int n_vars_locales = 0;     // Número de variables locales
+int nivel_rama = 0;            // Si nivel_rama en_rama == 0, se está fuera de un if/for/switch/while. Si > 0, indica que se está dentro de una rama
+int nivel_en_return = 0;       // Guarda el valor de nivel_rama cuando se parsea el return
 
 void insertar_local(char *nombre); 
 int es_local(char *nombre);
 void limpiar_locales();
 char *nombre_local(char *var);
+char *wrap_progn(char *codigo);
 
 // Abstract Syntax Tree (AST) Node Structure
 
@@ -79,7 +82,7 @@ typedef struct s_attr {
 %token CASE
 %token BREAK
 %token DEFAULT
-
+%token RETURN
 
 %right '='                    // es la ultima operacion que se debe realizar
 %left OR
@@ -117,7 +120,8 @@ funcion: IDENTIF '(' lista_args ')'
                                                         { strcpy(nombre_funcion, $1.code) ; 
                                                           limpiar_locales();
                                                           en_funcion = 1;}
-            '{' cuerpo '}'
+            '{' cuerpo 
+            '}'
                                                         {en_funcion = 0;
                                                           sprintf(temp, "(defun %s (%s)\n%s)", $1.code, $3.code, $7.code) ;
                                                           $$.code = gen_code(temp) ; }
@@ -126,7 +130,7 @@ funcion: IDENTIF '(' lista_args ')'
 lista_args: INTEGER IDENTIF r_lista_args                { sprintf(temp, "%s %s", $2.code, $3.code) ;
                                                           $$.code = gen_code(temp) ; }
             |                                           { $$.code = gen_code("") ; }
-            ;
+            ;   
 
 r_lista_args: ',' INTEGER IDENTIF r_lista_args          { sprintf(temp, "%s %s", $3.code, $4.code) ;
                                                           $$.code = gen_code(temp) ; }
@@ -138,7 +142,7 @@ funcion_main: MAIN '(' ')'
                                                           limpiar_locales();
                                                           en_funcion = 1; }
 
-                '{' cuerpo '}'                           
+                '{' cuerpo '}'                         
                                                         { en_funcion = 0; 
                                                           sprintf(temp, "(defun main ()\n%s)", $6.code) ; 
                                                           $$.code = gen_code(temp) ; }
@@ -156,15 +160,31 @@ cuerpo:     sentencia ';' cuerpo                        { sprintf(temp, "%s\n%s"
             | control_switch cuerpo                     { sprintf(temp, "%s\n%s", $1.code, $2.code) ;
                                                           $$.code = gen_code(temp) ; }
                                                           
+            | RETURN expresion ';' { nivel_en_return = nivel_rama ; } cuerpo   
+                                                        { if (strlen($5.code) > 0 || nivel_en_return > 0) {
+                                                            if (strlen($5.code) > 0) {
+                                                                sprintf(temp, "(return-from %s %s)\n%s", nombre_funcion, $2.code, $5.code) ;
+                                                            } else {
+                                                                sprintf(temp, "(return-from %s %s)", nombre_funcion, $2.code) ;
+                                                            }     
+                                                          } else {
+                                                            sprintf(temp, "%s", $2.code) ;
+                                                          }
+                                                          $$.code = gen_code(temp) ; }
             |                                           { $$.code = gen_code("") ; }
             ;
-
-bucle_while:    WHILE '(' expresion ')' '{' cuerpo '}'                 { sprintf (temp, "(loop while %s do\n%s)", $3.code, $6.code) ;
-                                                                          $$.code = gen_code(temp) ; }
+abre_rama: /* lambda */  {nivel_rama++ ;}
             ;
 
-bucle_for:    FOR '(' inicializ ';' expr_cond ';' oper_for ')' '{' cuerpo '}'   { sprintf(temp, "%s\n(loop while %s do%\n%s\n%s)", $3.code, $5.code, $10.code, $7.code) ;
-                                                                                  $$.code = gen_code(temp) ; }
+bucle_while:    WHILE '(' expresion ')' '{' abre_rama cuerpo '}'         { nivel_rama-- ;
+                                                                            sprintf (temp, "(loop while %s do\n%s)", $3.code, $7.code) ;
+                                                                            $$.code = gen_code(temp) ; }
+            ;
+
+bucle_for:    FOR '(' inicializ ';' expr_cond ';' oper_for ')' '{' abre_rama cuerpo '}'  
+                                                                             {  nivel_rama--;
+                                                                                sprintf(temp, "%s\n(loop while %s do\n%s\n%s)", $3.code, $5.code, $11.code, $7.code) ;
+                                                                                $$.code = gen_code(temp) ; }
 
 inicializ: IDENTIF '=' expresion                                      { sprintf(temp, "(setf %s %s)", nombre_local($1.code), $3.code) ;
                                                                         $$.code = gen_code(temp) ; }
@@ -190,10 +210,13 @@ oper_for:   INC '(' IDENTIF ')'                                        { if (en_
                                                                         $$.code = gen_code(temp) ; }
             ;
 
-control_if:   IF '(' expresion ')' '{' cuerpo '}'                      { sprintf(temp, "(if %s\n(progn\n%s))", $3.code, $6.code) ;
+control_if:   IF '(' expresion ')' '{' abre_rama cuerpo '}'             { nivel_rama-- ; 
+                                                                         sprintf(temp, "(if %s\n%s)", $3.code, wrap_progn($7.code)) ;
                                                                          $$.code = gen_code(temp) ; }
-            | IF '(' expresion ')' '{' cuerpo '}' ELSE '{' cuerpo '}'  { sprintf(temp, "(if %s\n(progn\n%s)\n(progn\n%s))", $3.code, $6.code, $10.code) ;
-                                                                         $$.code = gen_code(temp) ; }
+            | IF '(' expresion ')' '{' abre_rama cuerpo '}' ELSE '{' abre_rama cuerpo '}'  
+                                                                        { nivel_rama -= 2 ; 
+                                                                          sprintf(temp, "(if %s\n%s\n%s)", $3.code, wrap_progn($7.code), wrap_progn($12.code)) ;
+                                                                          $$.code = gen_code(temp) ; }
             ;
 
 control_switch: SWITCH '(' IDENTIF ')' '{' switch_cases '}'
@@ -201,11 +224,13 @@ control_switch: SWITCH '(' IDENTIF ')' '{' switch_cases '}'
                                                               $$.code = gen_code(temp) ; }
             ;
 
-switch_cases:   CASE NUMBER ':' cuerpo BREAK ';' switch_cases
-                                                            { sprintf(temp, "(%d\n%s)\n%s", $2.value, $4.code, $7.code) ;
+switch_cases:   CASE NUMBER ':' abre_rama cuerpo BREAK ';' switch_cases
+                                                            { nivel_rama-- ;
+                                                              sprintf(temp, "(%d\n%s)\n%s", $2.value, $5.code, $8.code) ;
                                                               $$.code = gen_code(temp) ; }
-            |   DEFAULT ':' cuerpo BREAK ';' switch_cases
-                                                            { sprintf(temp, "(otherwise\n%s)\n%s", $3.code, $6.code) ;
+            |   DEFAULT ':' abre_rama cuerpo BREAK ';' switch_cases
+                                                            { nivel_rama-- ;
+                                                              sprintf(temp, "(otherwise\n%s)\n%s", $4.code, $7.code) ;
                                                               $$.code = gen_code(temp) ; }
             |                                               { $$.code = gen_code("") ; }
             ;
@@ -327,6 +352,9 @@ operando:       IDENTIF                  { if (en_funcion && es_local($1.code))
             |   NUMBER                   { sprintf (temp, "%d", $1.value) ;
                                            $$.code = gen_code (temp) ; }
             |   '(' expresion ')'        { $$ = $2 ; }
+            |   IDENTIF '(' lista_params ')'
+                                          { sprintf(temp, "(%s %s)", $1.code, $3.code) ; 
+                                            $$.code = gen_code(temp) ; }
             ;
 
 
@@ -354,6 +382,16 @@ char *nombre_local(char *var) {
     static char buf[512];
     sprintf(buf, "%s_%s", nombre_funcion, var);
     return buf;
+}
+
+char *wrap_progn(char *codigo) {
+    static char buf[4096];
+    if (strchr(codigo, '\n') != NULL) {
+        sprintf(buf, "(progn\n%s)", codigo);
+    } else {
+        sprintf(buf, "%s", codigo);
+    }
+    return gen_code(buf);
 }
 
 int yyerror (char* mensaje) {
@@ -425,6 +463,7 @@ t_keyword keywords [] = {          // define las palabras reservadas y los
     "for",         FOR,
     "inc",         INC,
     "dec",         DEC,
+    "return",      RETURN,
     NULL,          0               // para marcar el fin de la tabla
 } ;
 
