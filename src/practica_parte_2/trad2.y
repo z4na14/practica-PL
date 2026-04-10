@@ -115,6 +115,9 @@ decl_global: INTEGER IDENTIF                            { sprintf(temp, "(setq %
                                                           $$.code = gen_code(temp) ; }
             | INTEGER IDENTIF mult_asign                { sprintf(temp, "(setq %s 0) %s", $2.code, $3.code) ;
                                                           $$.code = gen_code(temp) ; }
+            | INTEGER IDENTIF '[' NUMBER ']'            { sprintf(temp, "(setq %s (make-array %d))", $2.code, $4.value) ;
+                                                          $$.code = gen_code(temp) ; }
+            ;
 
 funcion: IDENTIF '(' lista_args ')'                                
                                                         { strcpy(nombre_funcion, $1.code) ; 
@@ -235,7 +238,7 @@ switch_cases:   CASE NUMBER ':' abre_rama cuerpo BREAK ';' switch_cases
             |                                               { $$.code = gen_code("") ; }
             ;
 
-sentencia:    INTEGER IDENTIF '=' expresion                            { if (en_funcion) {
+sentencia:  INTEGER IDENTIF '=' expresion                              { if (en_funcion) {
                                                                             insertar_local($2.code) ;
                                                                             sprintf (temp, "(setq %s %s)", nombre_local($2.code), $4.code) ;
                                                                          } else {
@@ -274,6 +277,19 @@ sentencia:    INTEGER IDENTIF '=' expresion                            { if (en_
             | PUTS '(' STRING ')'                                      { sprintf(temp, "(print \"%s\")", $3.code) ;
                                                                         $$.code = gen_code (temp) ; }
             | IDENTIF '(' lista_params ')'                             { sprintf(temp, "(%s %s)", $1.code, $3.code) ;
+                                                                        $$.code = gen_code(temp) ; }
+            | INTEGER IDENTIF '[' NUMBER ']'                           { if (en_funcion) {
+                                                                            insertar_local($2.code) ;
+                                                                            sprintf(temp, "(setq %s (make-array %d))", nombre_local($2.code), $4.value) ;
+                                                                        } else {
+                                                                            sprintf(temp, "(setq %s (make-array %d))", $2.code, $4.value) ;
+                                                                        }
+                                                                        $$.code = gen_code(temp) ; }
+            | IDENTIF '[' expresion ']' '=' expresion                  { if (en_funcion && es_local($1.code)) {
+                                                                            sprintf(temp, "(setf (aref %s %s) %s)", nombre_local($1.code), $3.code, $6.code) ;
+                                                                        } else {
+                                                                            sprintf(temp, "(setf (aref %s %s) %s)", $1.code, $3.code, $6.code) ;
+                                                                        }
                                                                         $$.code = gen_code(temp) ; }
             ;
 
@@ -344,9 +360,9 @@ termino:        operando                           { $$ = $1 ; }
                                                      $$.code = gen_code (temp) ;}
             ;
 
-operando:       IDENTIF                  { if (en_funcion && es_local($1.code))
+operando:       IDENTIF                     { if (en_funcion && es_local($1.code))
                                                 sprintf(temp, "%s", nombre_local($1.code)) ;
-                                            else
+                                              else
                                                 sprintf(temp, "%s", $1.code) ;
                                             $$.code = gen_code(temp) ; }
             |   NUMBER                   { sprintf (temp, "%d", $1.value) ;
@@ -355,6 +371,12 @@ operando:       IDENTIF                  { if (en_funcion && es_local($1.code))
             |   IDENTIF '(' lista_params ')'
                                           { sprintf(temp, "(%s %s)", $1.code, $3.code) ; 
                                             $$.code = gen_code(temp) ; }
+            |   IDENTIF '[' expresion ']'   { if (en_funcion && es_local($1.code)) {
+                                                sprintf(temp, "(aref %s %s)", nombre_local($1.code), $3.code) ;
+                                              } else {
+                                                sprintf(temp, "(aref %s %s)", $1.code, $3.code) ;
+                                              }
+                                              $$.code = gen_code(temp) ; }
             ;
 
 
