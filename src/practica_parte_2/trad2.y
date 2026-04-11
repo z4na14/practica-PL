@@ -152,7 +152,11 @@ funcion_main: MAIN '(' ')'
             |                                           { $$.code = gen_code("") ; }
             ;
 
-cuerpo:     sentencia ';' cuerpo                        { sprintf(temp, "%s\n%s", $1.code, $3.code) ;
+cuerpo:     sentencia ';' cuerpo                        { if (strlen($3.code) > 0) {
+                                                            sprintf(temp, "%s\n%s", $1.code, $3.code) ;
+                                                        } else {
+                                                            sprintf(temp, "%s", $1.code) ;
+                                                        }
                                                           $$.code = gen_code(temp) ; }
             | bucle_while cuerpo                        { sprintf(temp, "%s\n%s", $1.code, $2.code) ;
                                                           $$.code = gen_code(temp) ; }
