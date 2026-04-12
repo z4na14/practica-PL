@@ -34,4 +34,20 @@
     )
 #show table.cell.where(y: 0) : set text(weight: "bold")
 
-Mamagüebo
+= FOR LOOP
+
+
+= SWITCH/CASE
+
+El switch statement no tiene ninguna implementación complicada. Al igual que el resto de la gramática, simplemente hemos añadipardo el token para el `SWITCH`, y en cada caso se puede insertar el cuerpo completo, si al final encuentra el break.
+
+Además, estos se pueden encadenar dentro del cuerpo, para añair mas switches en niveles superiores.
+
+= FUNCIONES (FUNCTIONS)
+
+
+= VECTORES (VECTORS)
+
+Los vectores se pueden declarar y definir globalmente, usarse como operandos, y acceder y modificar dentro del cuerpo de las funciones. 
+
+Al igual que con las variables globales, los vectores también usan los mismo métodos para comprobar que esté dentro del scope de cada función.
