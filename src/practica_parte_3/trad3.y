@@ -249,7 +249,11 @@ sentencia:  INTEGER IDENTIF '=' expresion                              { if (en_
                                                                             sprintf (temp, "(setq %s %s)", $2.code, $4.code) ;
                                                                          }
                                                                         $$.code = gen_code (temp) ; }
-            | PRINTF '(' STRING ',' elemento mult_elementos ')'        { sprintf (temp, "(princ %s) %s", $5.code, $6.code) ;  
+            | PRINTF '(' STRING ',' elemento mult_elementos ')'        { if (strlen($6.code) > 0) {
+                                                                            sprintf (temp, "(princ %s)\n%s", $5.code, $6.code) ;
+                                                                        } else {
+                                                                            sprintf (temp, "(princ %s)", $5.code) ;
+                                                                        }
                                                                         $$.code = gen_code (temp) ; }
             | INTEGER IDENTIF                                          { if (en_funcion) {
                                                                             insertar_local($2.code);
@@ -278,7 +282,7 @@ sentencia:  INTEGER IDENTIF '=' expresion                              { if (en_
                                                                             sprintf (temp, "(setf %s %s)", $1.code, $3.code) ;
                                                                         }
                                                                         $$.code = gen_code(temp) ; }
-            | PUTS '(' STRING ')'                                      { sprintf(temp, "(print \"%s\")", $3.code) ;
+            | PUTS '(' STRING ')'                                      { sprintf(temp, "(write-line \"%s\")", $3.code) ;
                                                                         $$.code = gen_code (temp) ; }
             | IDENTIF '(' lista_params ')'                             { sprintf(temp, "(%s %s)", $1.code, $3.code) ;
                                                                         $$.code = gen_code(temp) ; }
@@ -312,7 +316,11 @@ elemento:   expresion                                   { $$.code = $1.code ; }
                                                           $$.code = gen_code(temp) ; }
             ;
 
-mult_elementos: ',' elemento mult_elementos             { sprintf(temp, "(princ %s) %s", $2.code, $3.code) ;
+mult_elementos: ',' elemento mult_elementos             { if (strlen($3.code) > 0) {
+                                                              sprintf(temp, "(princ %s)\n%s", $2.code, $3.code) ;
+                                                          } else {
+                                                              sprintf(temp, "(princ %s)", $2.code) ;
+                                                          }
                                                           $$.code = gen_code(temp) ; }
                 |                                       { $$.code = gen_code("") ; }
                 ;    
