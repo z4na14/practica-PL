@@ -282,7 +282,7 @@ sentencia:  INTEGER IDENTIF '=' expresion                              { if (en_
                                                                             sprintf (temp, "(setf %s %s)", $1.code, $3.code) ;
                                                                         }
                                                                         $$.code = gen_code(temp) ; }
-            | PUTS '(' STRING ')'                                      { sprintf(temp, "(write-line \"%s\")", $3.code) ;
+            | PUTS '(' STRING ')'                                      { sprintf(temp, "(print \"%s\")", $3.code) ;
                                                                         $$.code = gen_code (temp) ; }
             | IDENTIF '(' lista_params ')'                             { sprintf(temp, "(%s %s)", $1.code, $3.code) ;
                                                                         $$.code = gen_code(temp) ; }

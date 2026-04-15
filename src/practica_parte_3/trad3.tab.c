@@ -1779,7 +1779,7 @@ yyreduce:
 
   case 48: /* sentencia: PUTS '(' STRING ')'  */
 #line 285 "trad3.y"
-                                                                       { sprintf(temp, "(write-line \"%s\")", yyvsp[-1].code) ;
+                                                                       { sprintf(temp, "(print \"%s\")", yyvsp[-1].code) ;
                                                                         yyval.code = gen_code (temp) ; }
 #line 1785 "trad3.tab.c"
     break;
