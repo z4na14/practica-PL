@@ -1,0 +1,13 @@
+(setq a 0)
+(setq b 0)
+
+(defun main ()
+(setf a 10)
+(loop while (> a 0) do
+(princ a)
+(if (= (mod a 2) 0)
+(print " es par ")
+(print " es impar "))
+(setf a (- a 1)))
+)
+ (main)
