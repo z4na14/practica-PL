@@ -1,5 +1,5 @@
-// Denis Loren Moldovan, Jorge Adrian Saghin Dudulea, Gr. 121
-// 100522240@alumnos.uc3m.es, 100522257@alumnos.uc3m.es
+// Denis Loren Moldovan       Jorge Adrian Saghin Dudulea   Gr. 121
+// 100522240@alumnos.uc3m.es  100522257@alumnos.uc3m.es
 %{                          // SECCION 1 Declaraciones de C-Yacc
 
 #include <stdio.h>
@@ -95,16 +95,19 @@ typedef struct s_attr {
 
 %%                            // Seccion 3 Gramatica - Semantico
 
-axioma:     declaraciones_funciones funcion_main        { sprintf (temp, "%s\n%s", $1.code, $2.code) ;
-                                                          $$.code = gen_code(temp) ; 
-                                                          printf("%s\n", $$.code) ; }
+axioma:     declaraciones_funciones funcion_main        { ; }
             ;
 
 declaraciones_funciones: decl_global ';' declaraciones_funciones            { sprintf(temp, "%s\n%s", $1.code, $3.code) ;
-                                                                             $$.code = gen_code(temp) ; }
+                                                                             $$.code = gen_code(temp) ; 
+                                                                             printf("%s\n", $$.code) ; }
+
                         | funcion declaraciones_funciones                   { sprintf(temp, "%s\n%s", $1.code, $2.code) ; 
-                                                                              $$.code = gen_code(temp) ; }
-                        |                                                   { $$.code = gen_code("") ; }
+                                                                              $$.code = gen_code(temp) ; 
+                                                                              printf("%s\n", $$.code) ; }
+
+                        |                                                   { $$.code = gen_code("") ; 
+                                                                              printf("%s\n", $$.code) ; }
                         ;
 
 decl_global: INTEGER IDENTIF                            { sprintf(temp, "(setq %s 0)", $2.code) ;
@@ -148,8 +151,11 @@ funcion_main: MAIN '(' ')'
                 '{' cuerpo '}'                         
                                                         { en_funcion = 0; 
                                                           sprintf(temp, "(defun main ()\n%s)", $6.code) ; 
-                                                          $$.code = gen_code(temp) ; }
-            |                                           { $$.code = gen_code("") ; }
+                                                          $$.code = gen_code(temp) ; 
+                                                          printf("%s\n", $$.code) ; }
+
+            |                                           { $$.code = gen_code("") ; 
+                                                          printf("%s\n", $$.code) ; }
             ;
 
 cuerpo:     sentencia ';' cuerpo                        { if (strlen($3.code) > 0) {
