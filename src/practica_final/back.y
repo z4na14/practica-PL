@@ -76,8 +76,6 @@ r_exprSeq:    exprSeq                           { ; }
 expression1:  expression                        { ; }  // Lisp can evaluate arithmetical (and similar) expressions in REPL mode
                                                        // REPL Mode should print out the evaluated expressions ==> Future TODO for the Forth translation
 
-            | '(' SETQ IDENTIF number ')'       { printf (" variable %s %d %s ! \n", $3.code, $4.value, $3.code) ; }  // This is the declaration of a variable which in Forth has to be of global scope
-
             | '(' SETQ IDENTIF expression ')'   { printf(" variable %s ", $3.code) ;
                                                   printf(" %s ! \n", $3.code) ; }
                                                                                                       

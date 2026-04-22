@@ -33,3 +33,19 @@
       gutter: 0.2em, row-gutter: 0em, column-gutter: 0em
     )
 #show table.cell.where(y: 0) : set text(weight: "bold")
+
+= Qué hemos hecho en clase
+Al compilar con bison el back.y, hemos obtenido un conflicto shift-reduce en las reglas siguientes:
+```bash
+  Example: '(' SETQ IDENTIF number • ')'
+  Shift derivation
+    expression1
+    ↳ 7: '(' SETQ IDENTIF number • ')'
+  Reduce derivation
+    expression1
+    ↳ 8: '(' SETQ IDENTIF expression           ')'
+                          ↳ 24: operand
+                                ↳ 41: number •
+```
+
+Para arreglar este conflicto, solo tuvimos que eliminar la regla `'(' SETQ IDENTIF number • ')'` para evitar redundancias.
