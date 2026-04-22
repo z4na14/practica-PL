@@ -1,7 +1,3 @@
-// Test de complejidad elevada para back.y  (Common Lisp subset -> Forth)
-// Cubre: setq/setf, aritmetica compleja anidada, todos los comparadores,
-//        and/or/not, print/princ, loop-while, if/else, progn, defun main
-
 // --- Variables y calculos de nivel superior ---
 
 (setq base 2)
