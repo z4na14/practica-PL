@@ -4,7 +4,7 @@
   degree: "Ingenieria Informatica",
   subject: "Procesadores de Lenguaje",
   year: (25, 26),
-  project: "Practica Final - Tercera Parte",
+  project: "Practica Final - Cuarta Parte",
   title: "Traductor de un subconjunto de Lisp a Forth (back-end)",
   group: 81,
   authors: (
@@ -36,7 +36,7 @@
 
 = Qué hemos hecho en clase
 Al compilar con bison el back.y, hemos obtenido un conflicto shift-reduce en las reglas siguientes:
-```bash
+```sh
   Example: '(' SETQ IDENTIF number • ')'
   Shift derivation
     expression1
@@ -49,3 +49,5 @@ Al compilar con bison el back.y, hemos obtenido un conflicto shift-reduce en las
 ```
 
 Para arreglar este conflicto, solo tuvimos que eliminar la regla `'(' SETQ IDENTIF number • ')'` para evitar redundancias.
+
+Otra cosa que hemos cambiado en esta sesión ha sido el volcado de la traducción en el axioma. Lo hemos quitado de las acciones semánticas del no terminal del axioma y hemos incluido los printf en las acciones semánticas de las reglas de `declaraciones_funciones` y de `funcion_main`
