@@ -199,7 +199,10 @@ bucle_for:    FOR '(' inicializ ';' expr_cond ';' oper_for ')' '{' abre_rama cue
                                                                                 sprintf(temp, "%s\n(loop while %s do\n%s\n%s)", $3.code, $5.code, $11.code, $7.code) ;
                                                                                 $$.code = gen_code(temp) ; }
 
-inicializ: IDENTIF '=' expresion                                      { sprintf(temp, "(setf %s %s)", nombre_local($1.code), $3.code) ;
+inicializ: IDENTIF '=' expresion                                      { if (en_funcion && es_local($1.code))
+                                                                            sprintf(temp, "(setf %s %s)", nombre_local($1.code), $3.code) ;
+                                                                        else
+                                                                            sprintf(temp, "(setf %s %s)", $1.code, $3.code) ;
                                                                         $$.code = gen_code(temp) ; }
             | INTEGER IDENTIF '=' expresion                           { insertar_local($2.code) ;
                                                                         sprintf(temp, "(setq %s %s)", nombre_local($2.code), $4.code) ;  
