@@ -10,7 +10,6 @@
 (setf collatz_retorno (collatz (+ (* 3 n) 1) (+ cont 1) )))
 ))
 collatz_retorno)
-
 (defun main ()
 (setq main_resultado 0)
 (setq main_i 0)

@@ -1,7 +1,6 @@
 (setq primo 0)
 (setq n 0)
 (setq m 0)
-
 (defun main ()
 (setq main_d 0)
 (setq main_i 0)

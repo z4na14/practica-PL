@@ -7,7 +7,6 @@
 (princ b)
 (print " ")))
 )
-
 (defun main ()
 (mimax 10 1 )
 (mimax 1 10 )

@@ -4,7 +4,6 @@
 (setq d 0)
 (setq i 0)
 (setq p 0)
-
 (defun main ()
 (setf i 1)
 (setf n 1)

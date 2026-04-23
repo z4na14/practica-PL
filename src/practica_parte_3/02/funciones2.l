@@ -3,7 +3,6 @@
 (setf mifuncion_c 123)
 (print "Prueba")
 (+ mifuncion_c 1))
-
 (defun main ()
 (setq main_c 0)
 (setf main_c (mifuncion ))

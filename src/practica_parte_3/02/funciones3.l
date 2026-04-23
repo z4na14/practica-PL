@@ -2,7 +2,6 @@
 (setq cuadrado_c 0)
 (setf cuadrado_c (* a a))
 cuadrado_c)
-
 (defun main ()
 (setq main_a 0)
 (setq main_c 0)

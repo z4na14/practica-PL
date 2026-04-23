@@ -1,4 +1,3 @@
-
 (defun main ()
 (princ (+ 123 1))
 (princ " el texto se imprime ")

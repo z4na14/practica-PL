@@ -1,6 +1,5 @@
 (setq a 0)
 (setq b 0)
-
 (defun main ()
 (setf a 10)
 (loop while (> a 0) do

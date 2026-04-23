@@ -1,6 +1,5 @@
 (setq potencias (make-array 100))
 (setq m 0)
-
 (defun main ()
 (setq main_i 0)
 (setf m 30)

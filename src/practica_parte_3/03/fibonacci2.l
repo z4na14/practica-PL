@@ -4,7 +4,6 @@
 (setf fibonacci_retorno b)
 (setf fibonacci_retorno (fibonacci b (+ a b) (- n 1) )))
 fibonacci_retorno)
-
 (defun main ()
 (setq main_resultado 0)
 (setq main_i 0)

@@ -8,7 +8,6 @@
 (princ factorial_retorno)
 (print " ")
 factorial_retorno)
-
 (defun main ()
 (setq main_resultado 0)
 (setf main_resultado (factorial 7 ))

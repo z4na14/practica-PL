@@ -98,16 +98,11 @@ typedef struct s_attr {
 axioma:     declaraciones_funciones funcion_main        { ; }
             ;
 
-declaraciones_funciones: decl_global ';' declaraciones_funciones            { sprintf(temp, "%s\n%s", $1.code, $3.code) ;
-                                                                             $$.code = gen_code(temp) ; 
-                                                                             printf("%s\n", $$.code) ; }
+declaraciones_funciones: decl_global ';' { printf("%s\n", $1.code) ; } declaraciones_funciones            { $$.code = gen_code("") ; }
 
-                        | funcion declaraciones_funciones                   { sprintf(temp, "%s\n%s", $1.code, $2.code) ; 
-                                                                              $$.code = gen_code(temp) ; 
-                                                                              printf("%s\n", $$.code) ; }
+                        | funcion { printf("%s\n", $1.code) ; } declaraciones_funciones                   { $$.code = gen_code("") ; }
 
-                        |                                                   { $$.code = gen_code("") ; 
-                                                                              printf("%s\n", $$.code) ; }
+                        |                                                   { $$.code = gen_code("") ; }
                         ;
 
 decl_global: INTEGER IDENTIF                            { sprintf(temp, "(setq %s 0)", $2.code) ;
@@ -194,10 +189,11 @@ bucle_while:    WHILE '(' expresion ')' '{' abre_rama cuerpo '}'         { nivel
                                                                             $$.code = gen_code(temp) ; }
             ;
 
-bucle_for:    FOR '(' inicializ ';' expr_cond ';' oper_for ')' '{' abre_rama cuerpo '}'  
+bucle_for:    FOR '(' inicializ ';' expresion ';' oper_for ')' '{' abre_rama cuerpo '}'  
                                                                              {  nivel_rama--;
                                                                                 sprintf(temp, "%s\n(loop while %s do\n%s\n%s)", $3.code, $5.code, $11.code, $7.code) ;
                                                                                 $$.code = gen_code(temp) ; }
+            ;
 
 inicializ: IDENTIF '=' expresion                                      { if (en_funcion && es_local($1.code))
                                                                             sprintf(temp, "(setf %s %s)", nombre_local($1.code), $3.code) ;
@@ -208,9 +204,6 @@ inicializ: IDENTIF '=' expresion                                      { if (en_f
                                                                         sprintf(temp, "(setq %s %s)", nombre_local($2.code), $4.code) ;  
                                                                         $$.code = gen_code(temp) ;}
             ;       
-
-expr_cond:  expresion                                                  { $$.code  = $1.code ; }
-            ;
 
 oper_for:   INC '(' IDENTIF ')'                                        { if (en_funcion && es_local($3.code)) {
                                                                             sprintf(temp, "(setf %s (+ %s 1))", nombre_local($3.code), nombre_local($3.code)) ;
@@ -334,13 +327,33 @@ mult_elementos: ',' elemento mult_elementos             { if (strlen($3.code) > 
                 |                                       { $$.code = gen_code("") ; }
                 ;    
 
-mult_asign:   ',' IDENTIF '=' expresion mult_asign      { sprintf (temp, "(setq %s %s) %s", $2.code, $4.code, $5.code) ;
+mult_asign:   ',' IDENTIF '=' expresion mult_asign      { if (en_funcion) {
+                                                              insertar_local($2.code) ;
+                                                              sprintf (temp, "(setq %s %s) %s", nombre_local($2.code), $4.code, $5.code) ;
+                                                          } else {
+                                                              sprintf (temp, "(setq %s %s) %s", $2.code, $4.code, $5.code) ;
+                                                          }
                                                           $$.code = gen_code (temp) ; }
-            | ',' IDENTIF mult_asign                    { sprintf (temp, "(setq %s 0) %s", $2.code, $3.code) ;
+            | ',' IDENTIF mult_asign                    { if (en_funcion) {
+                                                              insertar_local($2.code) ;
+                                                              sprintf (temp, "(setq %s 0) %s", nombre_local($2.code), $3.code) ;
+                                                          } else {
+                                                              sprintf (temp, "(setq %s 0) %s", $2.code, $3.code) ;
+                                                          }
                                                           $$.code = gen_code (temp) ; }
-            | ',' IDENTIF '=' expresion                 { sprintf (temp, "(setq %s %s)", $2.code, $4.code) ; 
+            | ',' IDENTIF '=' expresion                 { if (en_funcion) {
+                                                              insertar_local($2.code) ;
+                                                              sprintf (temp, "(setq %s %s)", nombre_local($2.code), $4.code) ;
+                                                          } else {
+                                                              sprintf (temp, "(setq %s %s)", $2.code, $4.code) ;
+                                                          }
                                                           $$.code = gen_code (temp) ; }
-            | ',' IDENTIF                               { sprintf (temp, "(setq %s 0)", $2.code) ;
+            | ',' IDENTIF                               { if (en_funcion) {
+                                                              insertar_local($2.code) ;
+                                                              sprintf (temp, "(setq %s 0)", nombre_local($2.code)) ;
+                                                          } else {
+                                                              sprintf (temp, "(setq %s 0)", $2.code) ;
+                                                          }
                                                           $$.code = gen_code (temp) ; }
             ;
           

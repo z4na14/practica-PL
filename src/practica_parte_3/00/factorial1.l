@@ -1,6 +1,5 @@
 (setq resultado 0)
 (setq n 0)
-
 (defun main ()
 (setf n 7)
 (setf resultado 1)

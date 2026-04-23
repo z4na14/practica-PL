@@ -1,6 +1,5 @@
 (setq primos (make-array 100))
 (setq m 0)
-
 (defun main ()
 (setq main_v 0)
 (setq main_i 0)

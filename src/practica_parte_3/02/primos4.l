@@ -19,7 +19,6 @@ esprimo_primo)
 (princ " ")))
 (setf n (+ n 1)))
 )
-
 (defun main ()
 (setq main_d 0)
 (setq main_i 0)
