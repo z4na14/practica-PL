@@ -5,7 +5,7 @@
   subject: "Procesadores de Lenguaje",
   year: (25, 26),
   project: "Practica Final - Entrega Final",
-  title: "Traductor de un subconjunto de Lisp a Forth (back-end)",
+  title: "Traductor de un subconjunto de Lisp a Forth",
   group: 81,
   authors: (
     (
@@ -57,30 +57,31 @@ Para saber si una variable usada dentro de una funcion es local o global, se va 
 = Segunda aproximación
 
 
-== VARIABLES LOCALES
+== Variables locales
 
 Para implementar las variables locales, hemos añadido funciones y variables globales de c para poder detectar si estamos en una función y almacenar las variables locales. La variable local en_funcion indica 0 si estamos fuera de una función y 1 si estamos dentro. Para implementarlo, lo que hemos hecho ha sido añadir acciones semánticas que setean el valor de en_funcion a 1 despues de que se hayan parseado los tokens de ')' que contienen la lista de argumentos de las funciones. Y al acabar de parsear el cuerpo y el '}', le asignamos el valor 0 a la funcion. También hemos implementado funciones que borran la lista de variables locales. 
 
-== FOR LOOP
+== Bucle for
 
 El bucle for de C se traduce descomponiéndolo en dos partes separadas de Common Lisp: la inicialización como una asignación independiente (setq/setf), y el resto como un loop while equivalente, donde el incremento/decremento se coloca al final del cuerpo del bucle.
 
 La gramática acepta como inicialización tanto una asignación a variable ya existente como una declaración con tipo (int i = 0), en cuyo caso se registra la variable como local y se le añade el prefijo del nombre de la función para evitar colisiones con variables globales. Como operación de iteración solo se admiten inc(var) y dec(var), que se traducen a (setf var (+ var 1)) y (setf var (- var 1)) respectivamente.
 
 Por ejemplo, for (int i = 0; i < 10; inc(i)) { x = x + i; } se traduce a:
-```
+
+```yacc
 (setq main_i 0)
 (loop while (< main_i 10) do
   (setf main_x (+ main_x main_i))
   (setf main_i (+ main_i 1)))
 ```
-== SWITCH/CASE
+== switch / case
 
 El switch statement no tiene ninguna implementación complicada. Al igual que el resto de la gramática, simplemente hemos añadipardo el token para el `SWITCH`, y en cada caso se puede insertar el cuerpo completo, si al final encuentra el break.
 
 Además, estos se pueden encadenar dentro del cuerpo, para añair mas switches en niveles superiores.
 
-== FUNCIONES (FUNCTIONS)
+== Funciones
 Las funciones de C se traducen a defun de Common Lisp. La gramática reconoce la cabecera con su lista de argumentos y el cuerpo con sus sentencias, generando directamente la forma (defun nombre (args) cuerpo).
 
 Para gestionar las variables locales, cada vez que se entra en una función se limpia la tabla de variables locales (vars_locales). Toda variable declarada dentro de la función se registra en esa tabla y se le añade el prefijo nombre_funcion en el código generado, evitando así colisiones con variables globales del mismo nombre. Cuando se referencia un identificador, se comprueba si está en la tabla local y se aplica el prefijo correspondiente.
@@ -103,7 +104,7 @@ Se traduce a:
 (setq suma_r (+ a b))
 suma_r)
 ```
-== VECTORES (VECTORS)
+== Vectores
 
 Los vectores se pueden declarar y definir globalmente, usarse como operandos, y acceder y modificar dentro del cuerpo de las funciones. 
 
@@ -192,4 +193,32 @@ Otra cosa que hemos cambiado en esta sesión ha sido el volcado de la traducció
 
 = Pruebas realizadas
 
+Para las pruebas realizadas, hemos usado un set de tests generados por Claude, a partir del código final, tanto del backend como del frontend. Hemos tomado en cuenta que este consistiría basicamente por snippets de código reales de C y Lisp, por lo que, tras revisar la salida y limpiarla, la hemos usado para comprobar el correcto funcionamiento de este.
+
+Para la ejecución de tests, hemos seguido la siguiente dinámica. Para el front-end, hemos usado el siguiente mandato:
+
+\
+
+```bash
+$ cat test_complejo.c | ../../trad >test_complejo.out | meld --diff test_complejo.expected test_complejo.out
+```
+
+\
+
+Y para el backend, este otro:
+
+\
+
+```bash
+$ cat test_complejo.lisp | ../../back >test_complejo.out | meld --diff test_complejo.expected test_complejo.out
+```
+
+\
+
+#image("./img/meld.png")
+
 = Declaración de uso de IA
+
+Hemos hecho uso de la inteligencia artificial generativa para la generación de los casos de prueba de las gramáticas ya desarrolladas, para evitar perder el tiempo escribiendo snippets genéricos de código, que puedan llegar a estar mal, y alimentarlos directamente a nuestros programas.
+
+Para esta tarea, hemos usado la versión gratuita de Claude, alimentandolo como contexto nuestra gramática, y revisando completamente la salida completa para evitar errores.
