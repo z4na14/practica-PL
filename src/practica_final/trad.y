@@ -237,7 +237,7 @@ switch_cases:   CASE NUMBER ':' abre_rama cuerpo BREAK ';' switch_cases
                                                             { nivel_rama-- ;
                                                               sprintf(temp, "(%d\n%s)\n%s", $2.value, $5.code, $8.code) ;
                                                               $$.code = gen_code(temp) ; }
-            |   DEFAULT ':' abre_rama cuerpo BREAK ';' switch_cases
+            |   DEFAULT ':' abre_rama cuerpo BREAK ';'
                                                             { nivel_rama-- ;
                                                               sprintf(temp, "(otherwise\n%s)\n%s", $4.code, $7.code) ;
                                                               $$.code = gen_code(temp) ; }
