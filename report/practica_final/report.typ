@@ -44,7 +44,7 @@
 
 La práctica ha sido realizada por Denis Loren Moldovan y Jorge Adrian Saghin Dudulea. Los dos hemos trabajado en el diseño de las gramáticas y en el desarrollo de las acciones semánticas, tanto del frontend como del backend.
 
-Hemos usado Claude en dos momentos concretos, sin usarlo para escribir el código del traductor:
+Hemos requerido de Claude en un único momento, sin usarlo para escribir el código del traductor:
 
 - *Depuración de la gramática:* cuando el `return` no generaba `return-from` en todos los casos esperados, usamos Claude para entender dónde fallaba la lógica de `nivel_rama` y cómo arreglarlo.
 
