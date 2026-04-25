@@ -1,3 +1,5 @@
+// Denis Loren Moldovan, Jorge Adrian Saghin Dudulea, Gr. 121
+// 100522240@alumnos.uc3m.es, 100522257@alumnos.uc3m.es
 int g_total = 0;
 int g_cuenta = 0;
 int g_max = 0;
