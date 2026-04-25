@@ -701,14 +701,13 @@ Hemos preparado varios archivos de prueba para el frontend y el backend. Cada un
 La verificación del frontend se realiza con:
 
 ```bash
-$ ../../trad <test.c | clisp
+$ ./trad <test.c | clisp
 ```
 
 Y la del backend con:
 
 ```bash
-$ ../../back <test.lisp | gforth
+$ ./back <test.lisp | gforth
 ```
 
-Toda las pruebas se encuentran en la misma carpeta separadas por front, back, y las que venían en el zip de el Aula Global para comprobar el
-funcionamiento de nuestros programas. Comprobamos que la salida es correcta y que el intérprete no da errores.
+Todas las pruebas se encuentran separadas en carpetas de front y back. Comprobamos que la salida es correcta y que el intérprete no da errores.
