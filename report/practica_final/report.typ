@@ -34,6 +34,12 @@
     )
 #show table.cell.where(y: 0) : set text(weight: "bold")
 
+#show raw.where(block: true): block.with(
+  fill: luma(90%),
+  inset: 10pt,
+  radius: 4pt,
+)
+
 = Declaración de uso de IA y participación
 
 La práctica ha sido realizada por Denis Loren Moldovan y Jorge Adrian Saghin Dudulea. Los dos hemos trabajado en el diseño de las gramáticas y en el desarrollo de las acciones semánticas, tanto del frontend como del backend.
@@ -41,8 +47,6 @@ La práctica ha sido realizada por Denis Loren Moldovan y Jorge Adrian Saghin Du
 Hemos usado Claude en dos momentos concretos, sin usarlo para escribir el código del traductor:
 
 - *Depuración de la gramática:* cuando el `return` no generaba `return-from` en todos los casos esperados, usamos Claude para entender dónde fallaba la lógica de `nivel_rama` y cómo arreglarlo.
-
-- *Casos de prueba:* al terminar la gramática, le pedimos que generara casos de prueba complejos (`integracion.c` e `integracion.lisp`) y revisamos la salida a mano antes de usarla.
 
 = Introducción
 
@@ -95,10 +99,10 @@ decl_global: INTEGER IDENTIF
 Cada caso emite un `setq`. Si no hay inicializador se pone 0. Con `mult_asign` se pueden declarar varias variables en la misma línea. Los arrays usan `make-array`.
 
 ```
-int x;        →  (setq x 0)
-int x = 5;  →  (setq x 5)
-int x = 1, y;  →  (setq x 1) (setq y 0)
-int v[10];  →  (setq v (make-array 10))
+int x;        ->  (setq x 0)
+int x = 5;    ->  (setq x 5)
+int x = 1, y; ->  (setq x 1) (setq y 0)
+int v[10];    ->  (setq v (make-array 10))
 ```
 Para reasignar una variable ya declarada se usa `setf` en lugar de `setq`.
 ```yacc
@@ -110,15 +114,19 @@ sentencia: IDENTIF '=' expresion
             }
             $$.code = gen_code(temp) ; }
 ```
+
+\
+
 ```
-int x = 5; → (setq x 5)
-x = x + 1; → (setf x (+ x 1))
+int x = 5; -> (setq x 5)
+x = x + 1; -> (setf x (+ x 1))
 ```
 
 #image("img/diagramas/3. decl_global.png")
 
 == Función main
 La definición de `main` en C se traduce a un `defun` sin argumentos en Lisp:
+
 ```yacc
 funcion_main: MAIN '(' ')'
                 { strcpy(nombre_funcion, "main") ;
@@ -140,7 +148,7 @@ La acción intermedia inicializa el contexto de función antes de parsear el cue
 
 ```
 int main() {       (defun main()
-  int x = 5;    →     (setq main_x 5))
+  int x = 5;         (setq main_x 5))
 }
 ```
 
@@ -178,11 +186,10 @@ mult_elementos: ',' elemento mult_elementos
 ```
 `puts` se convierte directamente en `print`. Para `printf`, `mult_elementos` encadena un `princ` por cada argumento de forma recursiva. `elemento` diferencia entre una expresión y un string literal.
 ```
-puts("hola"); → (print "hola")
-printf("%d", x); → (princ x)
-printf("%d %d", x, y); → (princ x)
-                         (princ y)
-printf("%s", "texto"); → (princ "texto")
+puts("hola");          -> (print "hola")
+printf("%d", x);       -> (princ x)
+printf("%d %d", x, y); -> (princ x) (princ y)
+printf("%s", "texto"); -> (princ "texto")
 ```
 
 == Operadores, precedencia y asociatividad
@@ -225,11 +232,12 @@ termino: operando                       { $$ = $1 ; }
        ;
 ```
 La precedencia y asociatividad las definimos con `%left`/`%right`, así no hace falta refactorizar la gramática. Los operadores de dos caracteres (`&&`, `||`, `==`, etc.) se reconocen en el léxico: cuando aparece un carácter que puede ser el inicio de uno, se mira el siguiente y se decide qué token devolver.
+
 ```
-a + b * c → (+ a (* b c))
-a != b → (/= a b)
-!x → (not x)
--x → (- x)
+a + b * c  -> (+ a (* b c))
+a != b     -> (/= a b)
+!x         -> (not x)
+-x         -> (- x)
 ```
 
 
@@ -249,8 +257,8 @@ bucle_while:    WHILE '(' expresion ')' '{' abre_rama cuerpo '}'
 `abre_rama` es un no terminal vacío que incrementa `nivel_rama` al entrar en el bloque. Lo usamos para que la regla del `return` sepa si está dentro de un bloque y tenga que emitir `return-from`. El cuerpo del `while` se construye a partir de los atributos ya sintetizados.
 
 ```
-while (i < 10) {  →  (loop while (< i 10) do
-    x = x + i;       (setf x (+ x i)))
+while (i < 10) {  ->  (loop while (< i 10) do
+    x = x + i;          (setf x (+ x i)))
 }
 ```
 
@@ -258,6 +266,7 @@ while (i < 10) {  →  (loop while (< i 10) do
 
 == Estructura de control IF
 El `if`/`else` de C se traduce a la forma `if` de Lisp, con `progn` cuando hay más de una sentencia en una rama.
+
 ```yacc
 control_if: IF '(' expresion ')' '{' abre_rama cuerpo '}'
               { nivel_rama-- ;
@@ -271,15 +280,17 @@ control_if: IF '(' expresion ')' '{' abre_rama cuerpo '}'
                 $$.code = gen_code(temp) ; }
           ;
 ```
+
 `wrap_progn` añade el `(progn ...)` solo si el cuerpo tiene más de una sentencia, detectándolo por la presencia de `\n`. `nivel_rama` baja 1 al cerrar cada rama, o 2 si hay `else`.
+
 ```
-if (x < 0) { → (if (< x 0)
-    x = 0;     (setf x 0))
+if (x < 0) { -> (if (< x 0)
+    x = 0;       (setf x 0))
 }
 
-if (x < 0) {  → (if (< x 0)
-    x = 0;      (setf x 0)
-} else {        (setf x 1))
+if (x < 0) {  -> (if (< x 0)
+    x = 0;        (setf x 0)
+} else {          (setf x 1))
     x = 1;
 }
 ```
@@ -315,10 +326,13 @@ operando: IDENTIF
               sprintf(temp, "%s", $1.code) ;
             $$.code = gen_code(temp) ; }
 ```
+
+\
+
 ```
-int suma(int a, int b) {  →  (defun suma (a b)
-   int r = a + b;            (setq suma_r (+ a b))
-    return r;                suma_r)
+int suma(int a, int b) {  ->  (defun suma (a b)
+   int r = a + b;              (setq suma_r (+ a b))
+    return r;                   suma_r)
 }
 ```
 
@@ -364,10 +378,10 @@ oper_for: INC '(' IDENTIF ')'
 La inicialización se emite antes del `loop while`. Si declara una variable nueva se registra como local y se prefija. Si reasigna una ya existente, se comporta igual que el resto de reglas. El incremento (`inc`/`dec`) va al final del cuerpo del bucle.
 
 ```
-for (int i = 0; i < 10; inc(i)) {  →  (setq main_i 0)
-    x = x + 1;                        (loop while (< main_i 10) do
-}                                     (setf main_x (+ main_x main_i))
-                                      (setf main_i (+ main_i 1)))
+for (int i = 0; i < 10; inc(i)) {  ->  (setq main_i 0)
+    x = x + 1;                          (loop while (< main_i 10) do
+}                                       (setf main_x (+ main_x main_i))
+                                        (setf main_i (+ main_i 1)))
 ```
 
 #image("img/diagramas/9. bucle_for.png")
@@ -396,11 +410,11 @@ switch_cases:   CASE NUMBER ':' abre_rama cuerpo BREAK ';' switch_cases
 Cada `case` se convierte en una cláusula `(valor cuerpo)` del `case` de Lisp, y el `default` en `(otherwise ...)`. La gramática solo acepta un identificador como condición del `switch`, y literales numéricos como valores de cada caso.
 
 ```
-switch (x) {  →  (case x
-    case 1:      (1
-      y = 0;     (setf y 0))
-      break;     (otherwise
-    default:     (setf y 1)))
+switch (x) {  ->  (case x
+    case 1:        (1
+      y = 0;       (setf y 0))
+      break;       (otherwise
+    default:       (setf y 1)))
       y = 1;
       break;
 }
@@ -434,7 +448,9 @@ r_lista_args: ',' INTEGER IDENTIF r_lista_args
             | /* lambda */ { $$.code = gen_code("") ; }
             ;
 ```
+
 El `return` se gestiona en el cuerpo:
+
 ```yacc
 cuerpo: RETURN expresion ';' { nivel_en_return = nivel_rama ; } cuerpo
           { if (strlen($5.code) > 0 || nivel_en_return > 0) {
@@ -449,6 +465,7 @@ cuerpo: RETURN expresion ';' { nivel_en_return = nivel_rama ; } cuerpo
             }
             $$.code = gen_code(temp) ; }
 ```
+
 La acción semántica distingue tres situaciones según si hay código después del `return` y si estamos dentro de una rama. `nivel_en_return` captura el valor de `nivel_rama` en ese punto exacto, antes de que el resto del cuerpo lo cambie:
 
 - Si hay código después: emite `(return-from nombre expresion)` seguido del código restante
@@ -456,14 +473,14 @@ La acción semántica distingue tres situaciones según si hay código después 
 - Última sentencia fuera de todas las ramas: emite solo la expresión.
 
 ```
-int f(int x) {     →  (defun f (x)
-    return x + 1;     (+ x 1))
+int f(int x) {     ->  (defun f (x)
+    return x + 1;       (+ x 1))
 }
 
-int f(int x) {     →  (defun f (x)
-    if (x < 0)        (if (< x 0)
-        return 0;     (return-from f 0))
-    return x;         x)
+int f(int x) {     ->  (defun f (x)
+    if (x < 0)          (if (< x 0)
+        return 0;       (return-from f 0))
+    return x;           x)
 }
 ```
 
@@ -515,9 +532,9 @@ operando: IDENTIF '[' expresion ']'
 
 El patrón de `es_local`/`nombre_local` es el mismo que en el resto de reglas.
 ```
-int v[5]; → (setq v (make-array 5))
-v[2] = x + 1; → (setf (aref v 2) (+ x 1))
-y = v[i]; → (setf y (aref v i))
+int v[5];      -> (setq v (make-array 5))
+v[2] = x + 1;  -> (setf (aref v 2) (+ x 1))
+y = v[i];      -> (setf y (aref v i))
 ```
 
 = Implementación del BACKEND
@@ -537,8 +554,8 @@ operand: IDENTIF { printf (" %s @ ", $1.code) ; }
 El archivo inicial aceptaba solo `number` en `SETQ`, lo que causaba conflictos shift-reduce con `operand`. Lo unificamos para que acepte `expression` directamente:
 
 ```
-(setq x 5) → variable x 5 x !
-(setf x (+ x 1) → x @ 1 + x !
+(setq x 5)       -> variable x 5 x !
+(setf x (+ x 1)  -> x @ 1 + x !
 ```
 
 == Impresión
@@ -557,9 +574,9 @@ expression1: '(' PRINT STRING ')'
 `print` emite `."..."` seguido de `cr`. `princ` tiene dos variantes: si recibe una expresión emite `.` después de evaluarla, y si recibe una cadena usa `."..."` sin salto de línea.
 
 ```
-(print "hola") → ." hola" cr
-(princ x) →  x @ .
-(princ "hola") → ." hola"
+(print "hola")   -> ." hola" cr
+(princ x)        ->  x @ .
+(princ "hola")   -> ." hola"
 ```
 
 == Operadores
@@ -610,10 +627,10 @@ expression: '(' '-' expression expression ')' { printf (" - ") ; }
 Tanto `NEQ` (`/=`) como `NOT` usan `0=`: el primero compara y niega el resultado, el segundo solo niega.
 
 ```
-(+ a b) → a @ b @ +
-(/= a b) → a @ b @ = 0=
-(not x) → x @ 0=
-(- x) → x @ negate
+(+ a b)   -> a @ b @ +
+(/= a b)  -> a @ b @ = 0=
+(not x)   -> x @ 0=
+(- x)     -> x @ negate
 ```
 
 == Función main
@@ -627,8 +644,8 @@ expression1: '(' MAIN ')' { printf (" main\n") ; }
 La acción intermedia emite `: main` al reducir la cabecera del `defun`, y `;` al cerrarlo. La llamada `(main)` simplemente emite `main`.
 
 ```
-(defun main () <cuerpo>) → : main <cuerpo> ;
-(main) → main
+(defun main () <cuerpo>)  -> : main <cuerpo> ;
+(main)                    -> main
 ```
 
 == Estructura de control WHILE
@@ -643,10 +660,10 @@ expression1: '(' LOOP WHILE  { printf (" BEGIN\n") ; }
 Las tres acciones emiten: `BEGIN` antes de la condición, `WHILE` justo después de evaluarla y `REPEAT` al cerrar el cuerpo.
 
 ```
-(loop while (< x 10) do → BEGIN
-(setf x (+ x 1)))         x @ 10 < WHILE
-                          x @ 1 + x !
-                          REPEAT
+(loop while (< x 10) do -> BEGIN
+(setf x (+ x 1)))           x @ 10 < WHILE
+                            x @ 1 + x !
+                            REPEAT
 ```
 
 == Estructura de control IF
@@ -667,8 +684,8 @@ expression1: '(' ifHead  expression1 ')'
 `ifHead` emite `IF` tras la condición. Sin `else` se cierra con `THEN`, y con `else` se añade `ELSE` entre las dos ramas y `THEN` al final.
 
 ```
-(if (< x 0) (setf x 0))              → x @ 0 < IF 0 x ! THEN
-(if (< x 0) (setf x 0) (setf x 1))   → x @ 0 < IF 0 x ! ELSE 1 x ! THEN
+(if (< x 0) (setf x 0))              -> x @ 0 < IF 0 x ! THEN
+(if (< x 0) (setf x 0) (setf x 1))   -> x @ 0 < IF 0 x ! ELSE 1 x ! THEN
 ```
 
 = Anexo: Pruebas realizadas
@@ -684,13 +701,14 @@ Hemos preparado varios archivos de prueba para el frontend y el backend. Cada un
 La verificación del frontend se realiza con:
 
 ```bash
-$ ../../trad <integracion.c | clisp
+$ ../../trad <test.c | clisp
 ```
 
 Y la del backend con:
 
 ```bash
-$ ../../back <integracion.lisp | gforth
+$ ../../back <test.lisp | gforth
 ```
 
-Comprobamos que la salida es correcta y que el intérprete no da errores.
+Toda las pruebas se encuentran en la misma carpeta separadas por front, back, y las que venían en el zip de el Aula Global para comprobar el
+funcionamiento de nuestros programas. Comprobamos que la salida es correcta y que el intérprete no da errores.
