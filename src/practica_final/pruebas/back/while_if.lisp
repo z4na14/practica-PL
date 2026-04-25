@@ -1,0 +1,15 @@
+(setq i 0)
+(setq acum 0)
+(loop while (< i 10) do
+(if (= (mod i 2) 0)
+(setf acum (+ acum i))
+(setf acum (+ acum 1)))
+(setf i (+ i 1)))
+(print "while y if")
+(princ acum)
+(setq x 5)
+(if (> x 3)
+(progn
+(setq resultado 1)
+(princ resultado))
+(setq resultado 0))
