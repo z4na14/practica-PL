@@ -20,7 +20,7 @@
     )
   ),
   team: "Equipo 121",
-  professor: "MARIA PAZ SESMERO LORENTE",
+  professor: "MARIA PAZ SESMERO LORENTE\nDAVID YAGÜE CUEVAS\nJUAN MANUEL ALONSO WEBER",
   toc: true,
   logo: "new",
   language: "es"
