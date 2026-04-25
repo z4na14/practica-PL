@@ -1,0 +1,54 @@
+int resultado = 0;
+main() {
+    for (int i = 0 ; i < 5 ; INC(i)) {
+        resultado = resultado + i;
+    }
+    printf("%d", resultado);
+
+    int j = 0;
+    for (j = 10 ; j > 0 ; DEC(j)) {
+        resultado = resultado + j;
+    }
+    printf("%d", resultado);
+
+    for (int k = 0 ; k != 5 ; INC(k)) {
+        resultado = resultado + k;
+    }
+    printf("%d", resultado);
+
+    for (int n = 1 ; n <= 10 ; INC(n)) {
+        resultado = resultado + n;
+    }
+    printf("%d", resultado);
+
+    for (int m = 0 ; m < 10 ; INC(m)) {
+        if (m == 5) {
+            resultado = resultado + 100;
+        } else {
+            resultado = resultado + m;
+        }
+    }
+    printf("%d", resultado);
+
+    int b = 0;
+    for (int a = 0 ; a < 3 ; INC(a)) {
+        b = 0;
+        while (b < 3) {
+            resultado = resultado + 1;
+            b = b + 1;
+        }
+    }
+    printf("%d", resultado);
+
+    for (int x = 0 ; x < 10 && resultado > 0 ; INC(x)) {
+        resultado = resultado - 1;
+    }
+    printf("%d", resultado);
+
+    int z = 5;
+    for (int y = z + 1 ; y < 10 ; INC(y)) {
+        resultado = resultado + y;
+    }
+    printf("%d", resultado);
+}
+//@(main)

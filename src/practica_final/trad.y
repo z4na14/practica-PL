@@ -1,5 +1,5 @@
-// Denis Loren Moldovan       Jorge Adrian Saghin Dudulea   Gr. 121
-// 100522240@alumnos.uc3m.es  100522257@alumnos.uc3m.es
+// Denis Loren Moldovan, Jorge Adrian Saghin Dudulea, Gr. 121
+// 100522240@alumnos.uc3m.es, 100522257@alumnos.uc3m.es
 %{                          // SECCION 1 Declaraciones de C-Yacc
 
 #include <stdio.h>
@@ -239,7 +239,7 @@ switch_cases:   CASE NUMBER ':' abre_rama cuerpo BREAK ';' switch_cases
                                                               $$.code = gen_code(temp) ; }
             |   DEFAULT ':' abre_rama cuerpo BREAK ';'
                                                             { nivel_rama-- ;
-                                                              sprintf(temp, "(otherwise\n%s)\n%s", $4.code, $7.code) ;
+                                                              sprintf(temp, "(otherwise\n%s)", $4.code) ;
                                                               $$.code = gen_code(temp) ; }
             |                                               { $$.code = gen_code("") ; }
             ;

@@ -1,0 +1,7 @@
+(setq x 5)
+(setq y 10)
+(setq z (* x y))
+(setf x (+ x 1))
+(print "variables")
+(princ x)
+(princ z)
